@@ -67,14 +67,17 @@ def	simulate_positions(output_file= None,
 			plot_dir              = None,
 			plot_aitoff_dir_icrs  = None,
 			plot_aitoff_dir_gal   = None,
-			filename              = None
-			):
+			filename              = None,
+			z_max	              = 0.5,  #kpc
+			z_min	              = -0.5, #kpc
+			z_0		              =	0.6,  #kpc
+			r_max		          =	15.0, #kpc
+			r_min	              =	0.0,  #kpc
+			r_0	                  =	3.0,   #kpc
+			bins                  = 1000):
 	
 
-	z_max=0.5 #kpc
-	r_0	=	3.0	#kpc
-	z_0	=	0.6	#kpc
-	r_max	=	15.	#	??????????
+	
 	bins=1000
 
 	rng = np.random.RandomState(seed)
@@ -91,8 +94,10 @@ def	simulate_positions(output_file= None,
 
 
 	# CREATE R and z BINS TO SAMPLE FROM
-	distance_bins	=	np.arange(0.,	r_max,	r_max/float(bins))
-	vertical_height_z_bins	=	np.arange(-z_max,	z_max,	z_max/float(bins))
+	distance_bins	=	np.arange(r_min,	r_max,	(r_max-r_min)/float(bins))
+	vertical_height_z_bins	=	np.arange(z_min,	z_max,	(z_max-z_min)/float(bins))
+
+	
 
 
 	# SAMPLE FROM 2D PDF, FIRST ONLY z PDF IS USED BY INTEGRATING OVER R
@@ -101,7 +106,7 @@ def	simulate_positions(output_file= None,
 
 	vertical_height_z_pdf	=	np.ones(len(vertical_height_z_bins))
 	for	index_loop	in	range(len(vertical_height_z_pdf)):
-		vertical_height_z_pdf[index_loop]	=	scipy.integrate.quad(lambda	r_integrate:	get_model(distribution_model,r_0,z_0,r_integrate,vertical_height_z_bins[index_loop]),0,r_max)[0]
+		vertical_height_z_pdf[index_loop]	=	scipy.integrate.quad(lambda	r_integrate:	get_model(distribution_model,r_0,z_0,r_integrate,vertical_height_z_bins[index_loop]),r_min,r_max)[0]
 
 	
 	invCDF_vertical_height_z	=	InverseCDF(vertical_height_z_bins,	vertical_height_z_pdf)
