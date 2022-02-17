@@ -18,8 +18,11 @@ def get_flux_distribution(method_name,astopy_coodinates,diffuse_flux_given):
     if not method_name in methods.keys():
     	raise NotImplementedError(method_name+ " Model not found ")
 
+    if method_name=="StandardCandle":
+    	return methods[method_name](astopy_coodinates,diffuse_flux_given)
+    elif method_name=="LogNormal":
+    	return methods[method_name](astopy_coodinates,diffuse_flux_given)
 
-    return methods[method_name](astopy_coodinates,diffuse_flux_given)
 
 
 def standard_candle(astopy_coodinates,diffuse_flux_given):
@@ -54,9 +57,9 @@ def standard_candle(astopy_coodinates,diffuse_flux_given):
 
 ### BELOW: TO BE UPDATED ##########
 
-def log_normal(astopy_coodinates):
+def log_normal(astopy_coodinates,diffuse_flux_given,nsource,stdev_sigma_L=1.4,mean_luminosity=10**(32.1)):
 	"""
-	From Pg 4 https://arxiv.org/pdf/1705.00806.pdf
+	From  https://arxiv.org/pdf/1705.00806.pdf
 	Probability Density is given by:
 	p(L) = (1/(sigma_L L sqrt(2pi))) exp(-(lnL-lnLmed)^2/(2 sigma_L^2))
 	
@@ -64,8 +67,56 @@ def log_normal(astopy_coodinates):
 	L_med = Median luminosity
 	ln(Lmed) =  mean of normal distribution in ln(L)
 	sigma_L = standard deviation  of normal distribution in ln(L)
+
+	Mean and Median Luminosity Values are taken from here.
 	"""
 
+	
+
+	mean = mean_luminosity		 # mean lum is in erg/s
+	logmean = np.log(mean)       # log mean luminosity
+	sigma = stdev_sigma_L        # sigma is given in ln
+	mu = logmean-sigma**2./2.  # log median luminosity
+
+	try: 
+		len(distance_array) #IF ERROR BECAUSE OF 1 SOURCE, THEN except condition is run where array is infact a scalar object
+	except:
+		nsource=1
+	else:
+		nsource=len(distance_array)
+
+	rng = np.random.RandomState()
+	sample_distribution = rng.lognormal(mu, sigma, nsource)
+	return sample_distribution
+
+
+def pdf(self, lumi):
+        """ Gives the value of the PDF at lumi.
+
+        Parameters:
+            lumi: float or array-like, point where PDF is evaluated.
+
+        Notes:
+            PDF given by:
+                     1                 /     (ln(x) - mu)^2   \
+            -------------------- * exp | -  ----------------  |
+             x sigma sqrt(2 pi)        \       2 sigma^2      /
+        """
+        return np.exp(self.mu) * \
+            lognorm.pdf(lumi, s=self.sigma, scale=np.exp(self.mu))
+def cdf(self, lumi):
+        """ Gives the value of the CDF at lumi.
+
+        Parameters:
+            lumi: float or array-like, point where CDF is evaluated.
+
+        Notes:
+            CDF given by:
+             1     1       /  (ln(x) - mu)^2   \
+            --- + --- erf |  ----------------   |
+             2     2       \   sqrt(2) sigma   /
+        """
+        return lognorm.cdf(lumi, s=self.sigma, scale=np.exp(self.mu))
 
 
 def fermilatpi0(astopy_coodinates):

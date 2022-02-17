@@ -72,13 +72,13 @@ def	simulate_positions(output_file= None,
 			z_min	              = -0.5, #kpc
 			z_0		              =	0.6,  #kpc
 			r_max		          =	15.0, #kpc
-			r_min	              =	0.0,  #kpc
+			r_min	              =	1e-4,  #kpc
 			r_0	                  =	3.0,   #kpc
 			bins                  = 1000):
 	
 
 	
-	bins=1000
+	#bins=1000
 
 	rng = np.random.RandomState(seed)
 
@@ -92,17 +92,50 @@ def	simulate_positions(output_file= None,
 
 	"""
 
+	# CONVERTING 2D PDF TO 1D TO GET SAMPLES
+
+	binning_used_z = np.geomspace(z_min,z_max,num=bins)
+	binning_used_r = np.geomspace(r_min,r_max,num=bins)
+
+	vertical_height_z_pdf	=	np.ones(bins)
+	for	index_pdf	in	range(len(vertical_height_z_pdf)):
+		vertical_height_z_pdf[index_pdf]	=	get_model(distribution_model,r_0,z_0,0,binning_used_z[index_pdf])
+
+	distance_pdf	=	np.ones(bins)
+	for	index_pdf	in	range(len(vertical_height_z_pdf)):
+		distance_pdf[index_pdf]	=	get_model(distribution_model,r_0,z_0,binning_used_r[index_pdf],0)
+
+
+	invCDF_vertical_height_z	=	InverseCDF(binning_used_z,	vertical_height_z_pdf)
+
+	invCDF_distance_r	=	InverseCDF(binning_used_r,	distance_pdf)
+
 
 	# CREATE R and z BINS TO SAMPLE FROM
-	distance_bins	=	np.arange(r_min,	r_max,	(r_max-r_min)/float(bins))
+	distance_bins	=	np.logspace(-5,	np.log10(r_max),	bins)
 	vertical_height_z_bins	=	np.arange(z_min,	z_max,	(z_max-z_min)/float(bins))
 
+	selected_z=[]
+	selected_r=[]
+
+	for	index_distribution	in	range(0,number_sources_used):
+		rng = np.random.RandomState(seed)	
+		random_val_used1	=	rng.uniform(0,	1)
+		z_selected	=	invCDF_vertical_height_z(random_val_used1)
+		if index_distribution<=number_sources_used/2:
+			selected_z.append(float(z_selected))
+		else:
+			selected_z.append(float(z_selected*(-1)))
+
+		random_val_used2	=	rng.uniform(0,	1)
+		r_selected	=	invCDF_distance_r(random_val_used1)
+		selected_r.append(float(r_selected))
 	
+	np.random.shuffle(selected_r)
+	np.random.shuffle(selected_z)
 
-
-	# SAMPLE FROM 2D PDF, FIRST ONLY z PDF IS USED BY INTEGRATING OVER R
-	# THEN INVERSE CDF METHOD FROM FIRESONG IS USED TO SAMPLE AND GET z VALUES
-	# FOR EACH z VALUE, NOW CDF IS CREATED TO GET R VALUES WHICH IS USED TO SAMPLE R
+	"""	
+	# OLD SETUP: CHECK AND DELETE
 
 	vertical_height_z_pdf	=	np.ones(len(vertical_height_z_bins))
 	for	index_loop	in	range(len(vertical_height_z_pdf)):
@@ -130,7 +163,7 @@ def	simulate_positions(output_file= None,
 		r_selected	=	invCDF_distance(random_val_used2)
 		selected_r.append(float(r_selected))
 
-
+	"""
 
 	#
 	# GETTING RANDOM PHI (AZIMUTH ANGLE) VALUES AND THEN PERFORM CORRD CONVERSION
