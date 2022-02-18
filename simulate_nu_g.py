@@ -279,7 +279,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 	astropy_coords_in_galactic = convert_to_galactic(galcentric_coords_r_phi_z[0],galcentric_coords_r_phi_z[1],galcentric_coords_r_phi_z[2])[0]
 	
 
-	simulated_fluxes = get_flux_distribution(method_used,astropy_coords_in_galactic,diffuse_flux_given)
+	simulated_fluxes, sc_luminosity = get_flux_distribution(method_used,astropy_coords_in_galactic,diffuse_flux_given)
     
 
 	#
@@ -299,10 +299,10 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 
 
 	if print_output == True:
-		np.savez(full_path,[astropy_coords_in_galactic,simulated_fluxes])
+		np.savez(full_path,[astropy_coords_in_galactic,simulated_fluxes,sc_luminosity])
 
 
-	return [astropy_coords_in_galactic,simulated_fluxes]
+	return [astropy_coords_in_galactic,simulated_fluxes,sc_luminosity]
 
 
 

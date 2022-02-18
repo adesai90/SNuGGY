@@ -46,7 +46,7 @@ def standard_candle(astopy_coodinates,diffuse_flux_given):
 	indi_flux_vals = luminosity_per_source/(4*np.pi*(distance_array**2))
 
 
-	return indi_flux_vals
+	return indi_flux_vals,luminosity_per_source
 
 
 
