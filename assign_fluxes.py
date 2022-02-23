@@ -9,7 +9,10 @@ import astropy.coordinates as coord
 from astropy.coordinates.representation import CartesianRepresentation
 
 
-def get_flux_distribution(method_name,astopy_coodinates,diffuse_flux_given):
+def get_flux_distribution(method_name,astopy_coodinates,
+							diffuse_flux_given,
+							index_given,
+							ref_energy):
     methods = {"StandardCandle": standard_candle,
     		   "LogNormal": log_normal,
     		  "Fermi-LAT_pi0": fermilatpi0}
@@ -19,18 +22,28 @@ def get_flux_distribution(method_name,astopy_coodinates,diffuse_flux_given):
     	raise NotImplementedError(method_name+ " Model not found ")
 
     if method_name=="StandardCandle":
-    	return methods[method_name](astopy_coodinates,diffuse_flux_given)
+    	return methods[method_name](astopy_coodinates,
+    								diffuse_flux_given,
+									index_given,
+									ref_energy)
     elif method_name=="LogNormal":
-    	return methods[method_name](astopy_coodinates,diffuse_flux_given)
+    	return methods[method_name](astopy_coodinates,
+    								diffuse_flux_given,
+									index_given,
+									ref_energy)
 
 
-
-def standard_candle(astopy_coodinates,diffuse_flux_given):
+def standard_candle(astopy_coodinates,
+					diffuse_flux_given, #TeV-1cm-2s-1
+					index_given,
+					ref_energy):
 
 	#ASSUMPtiON : No redshifts are used in the caluclation.
 
 	# Find Distance Along line of sight
 	distance_array = astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)
+
+	diffuse_flux_given_at_ref_energy = diffuse_flux_given*((ref_energy/100)**index_given)
 
 	sum_f_by_L_all_sources=0
 	# Get the luminosity'
@@ -41,12 +54,13 @@ def standard_candle(astopy_coodinates,diffuse_flux_given):
 	else:
 		for los_distance in distance_array:
 			sum_f_by_L_all_sources += 1/(4*np.pi*(los_distance**2))
-	luminosity_per_source = diffuse_flux_given/sum_f_by_L_all_sources
+	luminosity_per_source = diffuse_flux_given_at_ref_energy/sum_f_by_L_all_sources
 
-	indi_flux_vals = luminosity_per_source/(4*np.pi*(distance_array**2))
+	indi_flux_vals = luminosity_per_source/(4*np.pi*(distance_array**2)) # Val in TeVcm-2s-1
 
+	indi_flux_vals_norm = indi_flux_vals/((ref_energy/100)**index_given) # Norm in TeV-1cm-2s-1
 
-	return indi_flux_vals,luminosity_per_source
+	return indi_flux_vals_norm,luminosity_per_source
 
 
 

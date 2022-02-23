@@ -267,10 +267,11 @@ def	simulate_positions(output_file= None,
 def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 							method_used               = "StandardCandle",
 							 plot_healpy_template_dir    = None, # Given only with Fermi-LAT_pi0 template
-							diffuse_flux_given          = 1.44e-8, # GeV cm-2 s-1 sr(e2dN/de = 1.44e-8 (e/100)^-2.28)
+							diffuse_flux_given          = 1.81e-14, # Tev-1cm-2s-1 Isotropic flux
 							print_output                = False,
-							full_path                   = "./default.npy"
-							):
+							full_path                   = "./ default.npy",
+							index_given                 = -2.0,
+							ref_energy                  = 100): #TeV
 
 	if galcentric_coords_r_phi_z==None:
 		print("Error: Give Source Positions in r,z,phi Coordinates for ARRAY FORMAT")
@@ -279,7 +280,10 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 	astropy_coords_in_galactic = convert_to_galactic(galcentric_coords_r_phi_z[0],galcentric_coords_r_phi_z[1],galcentric_coords_r_phi_z[2])[0]
 	
 
-	simulated_fluxes, sc_luminosity = get_flux_distribution(method_used,astropy_coords_in_galactic,diffuse_flux_given)
+	simulated_fluxes, sc_luminosity = get_flux_distribution(method_used,astropy_coords_in_galactic,
+															diffuse_flux_given, #TeV-1cm-2s-1
+															index_given,
+															ref_energy)
     
 
 	#
