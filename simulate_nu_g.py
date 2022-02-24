@@ -270,9 +270,11 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 							diffuse_flux_given          = 1.81e-14, # Tev-1cm-2s-1 Isotropic flux
 							print_output                = False,
 							full_path                   = "./ default.npy",
-							index_given                 = -2.0,
+							index_given                 = 2.0,
 							ref_energy                  = 100): #TeV
 
+	index_given=index_given*(-1.0)
+	
 	if galcentric_coords_r_phi_z==None:
 		print("Error: Give Source Positions in r,z,phi Coordinates for ARRAY FORMAT")
 		exit()
