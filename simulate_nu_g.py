@@ -68,12 +68,19 @@ def	simulate_positions(output_file= None,
 			plot_aitoff_dir_icrs  = None,
 			plot_aitoff_dir_gal   = None,
 			filename              = None,
-			z_max	              = 0.5,  #kpc
-			z_min	              = -0.5, #kpc
+			# LIMITS Below, generally set to high vals for inf
+			z_max	              = 300.0,  #kpc
+			z_min	              = 1e-06, #kpc
+			r_max		          =	1000000.0, #kpc
+			r_min	              =	0.001,  #kpc
+			# r_0 z_0 for distributions made using simple exponential
 			z_0		              =	0.6,  #kpc
-			r_max		          =	15.0, #kpc
-			r_min	              =	1e-4,  #kpc
 			r_0	                  =	3.0,   #kpc
+			# alpha beta h for distributions made using modified exponential
+			alpha	              = 2,
+			beta	              = 3.53,
+			h	                  = 0.181, #kpc
+			#number of bins
 			bins                  = 1000):
 	
 
@@ -82,7 +89,7 @@ def	simulate_positions(output_file= None,
 
 	rng = np.random.RandomState(seed)
 
-
+	distribution_parameters_list = [r_0,z_0,alpha,beta,h]
 	"""
 	Change	this	based	on	firesong	later
 
@@ -99,11 +106,11 @@ def	simulate_positions(output_file= None,
 
 	vertical_height_z_pdf	=	np.ones(bins)
 	for	index_pdf	in	range(len(vertical_height_z_pdf)):
-		vertical_height_z_pdf[index_pdf]	=	get_model(distribution_model,r_0,z_0,0,binning_used_z[index_pdf])
+		vertical_height_z_pdf[index_pdf]	=	get_model(distribution_model,distribution_parameters_list,0,binning_used_z[index_pdf])
 
 	distance_pdf	=	np.ones(bins)
 	for	index_pdf	in	range(len(vertical_height_z_pdf)):
-		distance_pdf[index_pdf]	=	get_model(distribution_model,r_0,z_0,binning_used_r[index_pdf],0)
+		distance_pdf[index_pdf]	=	get_model(distribution_model,distribution_parameters_list,binning_used_r[index_pdf],0)
 
 
 	invCDF_vertical_height_z	=	InverseCDF(binning_used_z,	vertical_height_z_pdf)
@@ -139,7 +146,7 @@ def	simulate_positions(output_file= None,
 
 	vertical_height_z_pdf	=	np.ones(len(vertical_height_z_bins))
 	for	index_loop	in	range(len(vertical_height_z_pdf)):
-		vertical_height_z_pdf[index_loop]	=	scipy.integrate.quad(lambda	r_integrate:	get_model(distribution_model,r_0,z_0,r_integrate,vertical_height_z_bins[index_loop]),r_min,r_max)[0]
+		vertical_height_z_pdf[index_loop]	=	scipy.integrate.quad(lambda	r_integrate:	get_model(distribution_model,distribution_parameters_list,r_integrate,vertical_height_z_bins[index_loop]),r_min,r_max)[0]
 
 	
 	invCDF_vertical_height_z	=	InverseCDF(vertical_height_z_bins,	vertical_height_z_pdf)
@@ -156,7 +163,7 @@ def	simulate_positions(output_file= None,
 		distance_pdf=np.ones(len(distance_bins))
 		# ABHISHEK: Can spEed up this by integrating into cdf or other definition
 		for	index_loop_per_z	in	range(len(distance_bins)):
-			distance_pdf[index_loop_per_z]	=	get_model(distribution_model,r_0,z_0,distance_bins[index_loop_per_z],z_selected)
+			distance_pdf[index_loop_per_z]	=	get_model(distribution_model,distribution_parameters_list,distance_bins[index_loop_per_z],z_selected)
 
 		invCDF_distance	=	InverseCDF(distance_bins,	distance_pdf)
 		random_val_used2	=	rng.uniform(0,	1)
@@ -274,7 +281,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 							ref_energy                  = 100): #TeV
 
 	index_given=index_given*(-1.0)
-	
+
 	if galcentric_coords_r_phi_z==None:
 		print("Error: Give Source Positions in r,z,phi Coordinates for ARRAY FORMAT")
 		exit()
