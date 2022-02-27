@@ -201,7 +201,7 @@ def	simulate_positions(output_file= None,
 		ax.set_xlabel("\n x (kpc)")
 		ax.set_ylabel("\n y (kpc)")
 		ax.set_zlabel("\n z (kpc)")
-		plt.savefig(plot_dir+"3d_plot_of_simulated_sources.png",bbox="tight")
+		plt.savefig(plot_dir+"3d_plot_of_simulated_sources.png",bbox_inches="tight")
 
 
 	if plot_aitoff_dir_gal!= None:
@@ -214,7 +214,7 @@ def	simulate_positions(output_file= None,
 		plt.xlabel('l',fontsize=18)
 		plt.ylabel('b.',fontsize=18)
 		plt.grid(True)
-		plt.savefig(plot_aitoff_dir_gal+"galactic_aitoff_of_simulated_sources.png",bbox="tight")
+		plt.savefig(plot_aitoff_dir_gal+"galactic_aitoff_of_simulated_sources.png",bbox_inches="tight")
 
 
 	if plot_aitoff_dir_icrs!= None:
@@ -228,7 +228,7 @@ def	simulate_positions(output_file= None,
 		plt.xlabel('R.A.',fontsize=18)
 		plt.ylabel('Decl.',fontsize=18)
 		plt.grid(True)
-		plt.savefig(plot_aitoff_dir_icrs+"icrs_aitoff_of_simulated_sources.png",bbox="tight")
+		plt.savefig(plot_aitoff_dir_icrs+"icrs_aitoff_of_simulated_sources.png",bbox_inches="tight")
 
 
 	if filename != None and output_file!=None:
@@ -307,12 +307,12 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 					unit="$\pi^0$-decay",
 					title="Fermi LAT $\pi^0$-decay template with histogram equalized color mapping",
 					hold=True)
-		plt.savefig(plot_healpy_template_dir+"fermi_pi0_decay_template_in_galactic_coords.png",bbox="tight")
+		plt.savefig(plot_healpy_template_dir+"fermi_pi0_decay_template_in_galactic_coords.png",bbox_inches="tight")
 
 
 
 	if print_output == True:
-		np.savez(full_path,[astropy_coords_in_galactic,simulated_fluxes,sc_luminosity])
+		np.savez(full_path,[np.asarray(astropy_coords_in_galactic).astype(np.float16),simulated_fluxes,sc_luminosity.astype(np.float16)])
 
 
 	return [astropy_coords_in_galactic,simulated_fluxes,sc_luminosity]
