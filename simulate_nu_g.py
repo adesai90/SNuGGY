@@ -312,7 +312,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 
 
 	if print_output == True:
-		np.savez(full_path,[np.asarray(astropy_coords_in_galactic).astype(np.float16),simulated_fluxes,sc_luminosity.astype(np.float16)])
+		np.savez_compressed(full_path,[astropy_coords_in_galactic,simulated_fluxes,sc_luminosity])
 
 
 	return [astropy_coords_in_galactic,simulated_fluxes,sc_luminosity]
