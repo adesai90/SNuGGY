@@ -310,9 +310,14 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 		plt.savefig(plot_healpy_template_dir+"fermi_pi0_decay_template_in_galactic_coords.png",bbox_inches="tight")
 
 
+	array_l=np.asarray(astropy_coords_in_galactic.l.deg).astype(np.float16)
+	array_b=np.asarray(astropy_coords_in_galactic.b.deg).astype(np.float16)
+	array_distance=np.asarray(astropy_coords_in_galactic.distance.deg).astype(np.float16)
+
+
 
 	if print_output == True:
-		np.savez_compressed(full_path,[astropy_coords_in_galactic,simulated_fluxes,sc_luminosity])
+		np.savez_compressed(full_path,[array_l,array_b,array_distance,simulated_fluxes,sc_luminosity])
 
 
 	return [astropy_coords_in_galactic,simulated_fluxes,sc_luminosity]
