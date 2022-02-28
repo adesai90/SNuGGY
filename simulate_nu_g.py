@@ -312,7 +312,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 
 	array_l=np.asarray(astropy_coords_in_galactic.l.deg).astype(np.float16)
 	array_b=np.asarray(astropy_coords_in_galactic.b.deg).astype(np.float16)
-	array_distance=np.asarray(astropy_coords_in_galactic.distance.deg).astype(np.float16)
+	array_distance=np.asarray(astropy_coords_in_galactic.distance.kpc).astype(np.float16)
 
 
 
