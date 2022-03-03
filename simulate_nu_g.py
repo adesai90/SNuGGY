@@ -64,7 +64,7 @@ def	simulate_positions(output_file= None,
 			distribution_model    ="exponential",
 			number_sources_used	  =	1000,
 			seed                  =	None,
-			plot_dir              = None,
+			plot_dir              = None, #to make plot in xyz
 			plot_aitoff_dir_icrs  = None,
 			plot_aitoff_dir_gal   = None,
 			filename              = None,
@@ -76,7 +76,7 @@ def	simulate_positions(output_file= None,
 			# r_0 z_0 for distributions made using simple exponential
 			z_0		              =	0.6,  #kpc
 			r_0	                  =	3.0,   #kpc
-			# alpha beta h for distributions made using modified exponential
+			# alpha beta h for distributions made using modified exponential ,fixed to SNR as default
 			alpha	              = 2,
 			beta	              = 3.53,
 			h	                  = 0.181, #kpc
@@ -274,11 +274,11 @@ def	simulate_positions(output_file= None,
 def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 							method_used               = "StandardCandle",
 							 plot_healpy_template_dir    = None, # Given only with Fermi-LAT_pi0 template
-							diffuse_flux_given          = 1.81e-14, # Tev-1cm-2s-1 Isotropic flux
+							diffuse_flux_given          = 2.14e-15, # Tev-1cm-2s-1 Isotropic flux
 							print_output                = False,
 							full_path                   = "./ default.npy",
-							index_given                 = 2.0,
-							ref_energy                  = 100): #TeV
+							index_given                 = 2.7,
+							ref_energy                  = 100.0): #TeV
 
 	index_given=index_given*(-1.0)
 

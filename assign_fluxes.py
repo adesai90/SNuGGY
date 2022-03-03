@@ -56,6 +56,7 @@ def standard_candle(astopy_coodinates,
 			sum_f_by_L_all_sources += 1/(4*np.pi*(los_distance**2))
 	luminosity_per_source = diffuse_flux_given_at_ref_energy/sum_f_by_L_all_sources
 
+
 	indi_flux_vals = luminosity_per_source/(4*np.pi*(distance_array**2)) # Val in TeVcm-2s-1
 
 	indi_flux_vals_norm = indi_flux_vals/((ref_energy/100)**index_given) # Norm in TeV-1cm-2s-1
