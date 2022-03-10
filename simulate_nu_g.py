@@ -68,6 +68,7 @@ def	simulate_positions(output_file= None,
 			plot_aitoff_dir_icrs  = None,
 			plot_aitoff_dir_gal   = None,
 			filename              = None,
+			make_pdf_plot_location= None, # To make pdf plots
 			# LIMITS Below, generally set to high vals for inf
 			z_max	              = 300.0,  #kpc
 			z_min	              = 1e-06, #kpc
@@ -98,7 +99,13 @@ def	simulate_positions(output_file= None,
 	Px(x)	=	integrateP(x,y)dy
 
 	"""
-
+	if make_pdf_plot_location!=None:
+		get_model(distribution_model,distribution_parameters_list,0,1,make_pdf_plot_location)
+		make_pdf_plot_location=None
+	
+	if make_pdf_plot_location!=None:
+		print("Something went wrong")
+	
 	# CONVERTING 2D PDF TO 1D TO GET SAMPLES
 
 	binning_used_z = np.geomspace(z_min,z_max,num=bins)
@@ -106,11 +113,11 @@ def	simulate_positions(output_file= None,
 
 	vertical_height_z_pdf	=	np.ones(bins)
 	for	index_pdf	in	range(len(vertical_height_z_pdf)):
-		vertical_height_z_pdf[index_pdf]	=	get_model(distribution_model,distribution_parameters_list,0,binning_used_z[index_pdf])
+		vertical_height_z_pdf[index_pdf]	=	get_model(distribution_model,distribution_parameters_list,0,binning_used_z[index_pdf],make_pdf_plot_location)
 
 	distance_pdf	=	np.ones(bins)
 	for	index_pdf	in	range(len(vertical_height_z_pdf)):
-		distance_pdf[index_pdf]	=	get_model(distribution_model,distribution_parameters_list,binning_used_r[index_pdf],0)
+		distance_pdf[index_pdf]	=	2*np.pi*get_model(distribution_model,distribution_parameters_list,binning_used_r[index_pdf],0,make_pdf_plot_location)
 
 
 	invCDF_vertical_height_z	=	InverseCDF(binning_used_z,	vertical_height_z_pdf)
@@ -144,6 +151,10 @@ def	simulate_positions(output_file= None,
 	"""	
 	# OLD SETUP: CHECK AND DELETE
 
+	vertical_height_z_bins = np.geomspace(z_min,z_max,num=bins)
+	distance_bins = np.geomspace(r_min,r_max,num=bins)
+	norm_added=1
+
 	vertical_height_z_pdf	=	np.ones(len(vertical_height_z_bins))
 	for	index_loop	in	range(len(vertical_height_z_pdf)):
 		vertical_height_z_pdf[index_loop]	=	scipy.integrate.quad(lambda	r_integrate:	get_model(distribution_model,distribution_parameters_list,r_integrate,vertical_height_z_bins[index_loop]),r_min,r_max)[0]
@@ -157,31 +168,37 @@ def	simulate_positions(output_file= None,
 	for	index_distribution	in	range(0,number_sources_used):	
 		random_val_used1	=	rng.uniform(0,	1)
 		z_selected	=	invCDF_vertical_height_z(random_val_used1)
-		selected_z.append(float(z_selected))
+		if index_distribution<=number_sources_used/2:
+			selected_z.append(float(z_selected))
+		else:
+			selected_z.append(float(z_selected*(-1)))
 
 		# NOW GETTING R
 		distance_pdf=np.ones(len(distance_bins))
 		# ABHISHEK: Can spEed up this by integrating into cdf or other definition
 		for	index_loop_per_z	in	range(len(distance_bins)):
 			distance_pdf[index_loop_per_z]	=	get_model(distribution_model,distribution_parameters_list,distance_bins[index_loop_per_z],z_selected)
+		
 
 		invCDF_distance	=	InverseCDF(distance_bins,	distance_pdf)
 		random_val_used2	=	rng.uniform(0,	1)
 		r_selected	=	invCDF_distance(random_val_used2)
 		selected_r.append(float(r_selected))
 
+	np.random.shuffle(selected_r)
+	np.random.shuffle(selected_z)
 	"""
 
 	#
 	# GETTING RANDOM PHI (AZIMUTH ANGLE) VALUES AND THEN PERFORM CORRD CONVERSION
 	#
 	selected_angles = np.random.uniform(0,2*np.pi,len(selected_r))
-
+	
 	array_coords_in_Galactocentric = [selected_r,selected_z,selected_angles] #kpc kpc rad
 	coord_conversion = convert_to_galactic(selected_r,selected_z,selected_angles)
 	astropy_coords_in_galactic = coord_conversion[0]
 	array_coords_in_galactic = coord_conversion[1]
-	
+
 	
 	del coord_conversion
 
@@ -211,8 +228,8 @@ def	simulate_positions(output_file= None,
 		dec = astropy_coords_in_galactic.b.wrap_at(180 * u.deg).radian
 		plt.plot(ra,dec,'.', label="Simulated Sources in Galactic Coordinates",alpha=0.5,zorder=0)
 		plt.legend(loc="lower right")
-		plt.xlabel('l',fontsize=18)
-		plt.ylabel('b.',fontsize=18)
+		plt.xlabel('l')
+		plt.ylabel('b.')
 		plt.grid(True)
 		plt.savefig(plot_aitoff_dir_gal+"galactic_aitoff_of_simulated_sources.png",bbox_inches="tight")
 
@@ -225,8 +242,8 @@ def	simulate_positions(output_file= None,
 		ra2, dec2 = zip(*sorted(zip(ra2,dec2)))
 		plt.plot(ra2,dec2,'.', label="Simulated Sources in ICRS Coordinates",alpha=0.5,zorder=0)
 		plt.legend(loc="lower right")
-		plt.xlabel('R.A.',fontsize=18)
-		plt.ylabel('Decl.',fontsize=18)
+		plt.xlabel('R.A.')
+		plt.ylabel('Decl.')
 		plt.grid(True)
 		plt.savefig(plot_aitoff_dir_icrs+"icrs_aitoff_of_simulated_sources.png",bbox_inches="tight")
 
@@ -295,6 +312,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 															ref_energy)
     
 
+	"""
 	#
 	# PLOT FERMIPI0 TEMPLATE USING HEALPY IF DIR IS SPECIFIED
 	#
@@ -308,7 +326,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 					title="Fermi LAT $\pi^0$-decay template with histogram equalized color mapping",
 					hold=True)
 		plt.savefig(plot_healpy_template_dir+"fermi_pi0_decay_template_in_galactic_coords.png",bbox_inches="tight")
-
+	"""
 
 	array_l=np.asarray(astropy_coords_in_galactic.l.deg).astype(np.float16)
 	array_b=np.asarray(astropy_coords_in_galactic.b.deg).astype(np.float16)
