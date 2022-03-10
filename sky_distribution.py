@@ -38,8 +38,8 @@ def get_model(model_name,distribution_parameters_list,r,z,make_pdf_plot_location
     	exit()
 
     if make_pdf_plot_location!=None:
-    	x_arr_pdf_r = np.arange(0.01,15,0.1)
-    	x_arr_pdf_z = np.arange(0.01,3,0.1)
+    	x_arr_pdf_r = np.arange(0.001,15,0.1)
+    	x_arr_pdf_z = np.arange(0.001,3,0.1)
 
     	y_arr_pdf_r = []
     	y_arr_pdf_z = []
@@ -79,8 +79,11 @@ def ExponentialSpatialDist(param_used,r,z): # param_used = r_0,z_0
 	z_solar=0.015
 
 	
+	maximum_pt = r_0 # Found Using derivatve
 	
-	norm_r     = r_0  # Max_pt  Found Using derivatve
+	norm_r     = 1/(maximum_pt*np.exp(-1.*(maximum_pt/r_0)))
+	
+	
 	exp_dist = norm_r * r * np.exp(-1.*r/r_0)
 	norm_z     = 1 
 	exp_z    = norm_z * np.exp(-1.* abs(z)/z_0)
