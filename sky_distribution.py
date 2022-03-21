@@ -71,6 +71,11 @@ def get_model(model_name,distribution_parameters_list,r,z,make_pdf_plot_location
 def ExponentialSpatialDist(param_used,r,z): # param_used = r_0,z_0
 	"""Simple model where exponential functions are used for distribution
 	   See Eq 1 of https://iopscience.iop.org/article/10.3847/2041-8205/832/1/L6/pdf
+
+	Note that: dN/dV is prop to e^r/r_0 e^z/z0
+	When dN/dr is caluclated,  a factor of r is added
+	So in norm_r also a factor of maximum_pt is added
+
 	"""
 	#print("BASIC EXPONENTIAL MODEL IS USED")
 	r_0 = param_used[0]
@@ -80,6 +85,7 @@ def ExponentialSpatialDist(param_used,r,z): # param_used = r_0,z_0
 
 	
 	maximum_pt = r_0 # Found Using derivatve
+
 	
 	norm_r     = 1/(maximum_pt*np.exp(-1.*(maximum_pt/r_0)))
 	
@@ -101,6 +107,10 @@ def ModifiedExponentialDist(param_used,r,z): # param_used = alpha,beta,h
 	"""Derived using Equation 7 of 
 	   https://arxiv.org/pdf/1505.03156.pdf
 	   which can be modified based on class of sources (SNR/PWN)
+	Note that: dN/dV is prop to (r/r_s)^alpha e^-beta(r-r_s/r_s) e^z/z0
+	When dN/dr is caluclated,  a factor of r is added
+	So in norm_r also a factor of maximum_pt is added
+
 	"""
 	#print("IMPROVED EXPONENTIAL MODEL IS USED: \n can be modified based on class of sources (SNR/PWN) ")
 	alpha = param_used[0]
@@ -111,9 +121,9 @@ def ModifiedExponentialDist(param_used,r,z): # param_used = alpha,beta,h
 	z_solar=0.015
 	maximum_pt = alpha*r_solar/beta # Found Using derivatve
 	
-	norm_r     = 1/(((maximum_pt/r_solar)**alpha)*np.exp(-1.*beta*((maximum_pt-r_solar)/r_solar)))
+	norm_r     = 1/(maximum_pt*((maximum_pt/r_solar)**alpha)*np.exp(-1.*beta*((maximum_pt-r_solar)/r_solar)))
 	
-	exp_dist = norm_r * ((r/r_solar)**alpha)*np.exp(-1.*beta*((r-r_solar)/r_solar))
+	exp_dist = norm_r * (r*(r/r_solar)**alpha)*np.exp(-1.*beta*((r-r_solar)/r_solar))
 	
 
 	norm_z     = 1 
