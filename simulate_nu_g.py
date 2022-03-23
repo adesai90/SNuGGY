@@ -132,11 +132,12 @@ def	simulate_positions(output_file= None,
 	selected_z=[]
 	selected_r=[]
 
+	even_num = 1
 	for	index_distribution	in	range(0,number_sources_used):
 		rng = np.random.RandomState(seed)	
 		random_val_used1	=	rng.uniform(0,	1)
 		z_selected	=	invCDF_vertical_height_z(random_val_used1)
-		if index_distribution<=number_sources_used/2:
+		if even_num==1:
 			selected_z.append(float(z_selected))
 		else:
 			selected_z.append(float(z_selected*(-1)))
@@ -144,6 +145,7 @@ def	simulate_positions(output_file= None,
 		random_val_used2	=	rng.uniform(0,	1)
 		r_selected	=	invCDF_distance_r(random_val_used1)
 		selected_r.append(float(r_selected))
+		even_num = even_num*-1
 	
 	np.random.shuffle(selected_r)
 	np.random.shuffle(selected_z)

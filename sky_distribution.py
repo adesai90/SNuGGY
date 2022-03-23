@@ -119,7 +119,7 @@ def ModifiedExponentialDist(param_used,r,z): # param_used = alpha,beta,h
 
 	r_solar=8.5
 	z_solar=0.015
-	maximum_pt = alpha*r_solar/beta # Found Using derivatve
+	maximum_pt = (alpha+1)*r_solar/beta # Found Using derivatve
 	
 	norm_r     = 1/(maximum_pt*((maximum_pt/r_solar)**alpha)*np.exp(-1.*beta*((maximum_pt-r_solar)/r_solar)))
 	
