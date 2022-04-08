@@ -61,7 +61,7 @@ def standard_candle(astopy_coodinates,
 
 	indi_flux_vals_norm = indi_flux_vals/((ref_energy/100)**index_given) # Norm in TeV-1cm-2s-1
 
-	return indi_flux_vals_norm,luminosity_per_source
+	return np.asarray(indi_flux_vals_norm).astype(np.float16),np.asarray(luminosity_per_source).astype(np.float16)
 
 
 

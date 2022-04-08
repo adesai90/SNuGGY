@@ -57,7 +57,7 @@ def convert_to_galactic(r_conv,z_conv,theta_conv):
 
 	del c3
 
-	return [transformed_coord,[transformed_coord.l,transformed_coord.b,transformed_coord.distance]]
+	return [transformed_coord,[np.asarray(transformed_coord.l).astype(np.float16),np.asarray(transformed_coord.b).astype(np.float16),np.asarray(transformed_coord.distance).astype(np.float16)]]
 	
 
 def	simulate_positions(output_file= None,
