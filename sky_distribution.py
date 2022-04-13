@@ -93,13 +93,43 @@ def ExponentialSpatialDist(param_used,r,z): # param_used = r_0,z_0
 	exp_dist = norm_r * r * np.exp(-1.*r/r_0)
 	norm_z     = 1 
 	exp_z    = norm_z * np.exp(-1.* abs(z)/z_0)
+	
+	try:
+		len(r)/len(z)
+	except:
+		try:
+			len(r)
+		except:
+			#print("R is a num")
+			1 #Just a placeholder
+		else:
+			#print("R is an array")
+			if z==0:
+				return (exp_dist)
+			else:
+				return (exp_z*exp_dist)
+			
 
-	if r==0:
-		return (exp_z)
-	elif z==0:
-		return (exp_dist)
+		try:
+			len(z)
+		except:
+			#print("Z is a num")
+			1  #Just a placeholder
+		else:
+			#print("Z is an array")
+			if r==0:
+				return (exp_z)
+			else:
+				return (exp_z*exp_dist)
 	else:
 		return (exp_z*exp_dist)
+
+	return (exp_z*exp_dist)
+
+
+	
+
+	
 
 def ModifiedExponentialDist(param_used,r,z): # param_used = alpha,beta,h
 

@@ -111,13 +111,8 @@ def	simulate_positions(output_file= None,
 	binning_used_z = np.geomspace(z_min,z_max,num=bins)
 	binning_used_r = np.geomspace(r_min,r_max,num=bins)
 
-	vertical_height_z_pdf	=	np.ones(bins)
-	for	index_pdf	in	range(len(vertical_height_z_pdf)):
-		vertical_height_z_pdf[index_pdf]	=	get_model(distribution_model,distribution_parameters_list,0,binning_used_z[index_pdf],make_pdf_plot_location)
-
-	distance_pdf	=	np.ones(bins)
-	for	index_pdf	in	range(len(vertical_height_z_pdf)):
-		distance_pdf[index_pdf]	=	2*np.pi*get_model(distribution_model,distribution_parameters_list,binning_used_r[index_pdf],0,make_pdf_plot_location)
+	vertical_height_z_pdf = get_model(distribution_model,distribution_parameters_list,0,binning_used_z,make_pdf_plot_location)
+	distance_pdf=	2*np.pi*get_model(distribution_model,distribution_parameters_list,binning_used_r,0,make_pdf_plot_location)
 
 
 	invCDF_vertical_height_z	=	InverseCDF(binning_used_z,	vertical_height_z_pdf)
@@ -150,46 +145,7 @@ def	simulate_positions(output_file= None,
 	np.random.shuffle(selected_r)
 	np.random.shuffle(selected_z)
 
-	"""	
-	# OLD SETUP: CHECK AND DELETE
-
-	vertical_height_z_bins = np.geomspace(z_min,z_max,num=bins)
-	distance_bins = np.geomspace(r_min,r_max,num=bins)
-	norm_added=1
-
-	vertical_height_z_pdf	=	np.ones(len(vertical_height_z_bins))
-	for	index_loop	in	range(len(vertical_height_z_pdf)):
-		vertical_height_z_pdf[index_loop]	=	scipy.integrate.quad(lambda	r_integrate:	get_model(distribution_model,distribution_parameters_list,r_integrate,vertical_height_z_bins[index_loop]),r_min,r_max)[0]
-
 	
-	invCDF_vertical_height_z	=	InverseCDF(vertical_height_z_bins,	vertical_height_z_pdf)
-
-	selected_z=[]
-	selected_r=[]
-
-	for	index_distribution	in	range(0,number_sources_used):	
-		random_val_used1	=	rng.uniform(0,	1)
-		z_selected	=	invCDF_vertical_height_z(random_val_used1)
-		if index_distribution<=number_sources_used/2:
-			selected_z.append(float(z_selected))
-		else:
-			selected_z.append(float(z_selected*(-1)))
-
-		# NOW GETTING R
-		distance_pdf=np.ones(len(distance_bins))
-		# ABHISHEK: Can spEed up this by integrating into cdf or other definition
-		for	index_loop_per_z	in	range(len(distance_bins)):
-			distance_pdf[index_loop_per_z]	=	get_model(distribution_model,distribution_parameters_list,distance_bins[index_loop_per_z],z_selected)
-		
-
-		invCDF_distance	=	InverseCDF(distance_bins,	distance_pdf)
-		random_val_used2	=	rng.uniform(0,	1)
-		r_selected	=	invCDF_distance(random_val_used2)
-		selected_r.append(float(r_selected))
-
-	np.random.shuffle(selected_r)
-	np.random.shuffle(selected_z)
-	"""
 
 	#
 	# GETTING RANDOM PHI (AZIMUTH ANGLE) VALUES AND THEN PERFORM CORRD CONVERSION

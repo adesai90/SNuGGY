@@ -41,27 +41,31 @@ def standard_candle(astopy_coodinates,
 	#ASSUMPtiON : No redshifts are used in the caluclation.
 
 	# Find Distance Along line of sight
-	distance_array = astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)
-
+	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
+	all_lum_d = 1/(4*np.pi*(distance_array**2))
+	del distance_array
+	#print(all_lum_d)
 	diffuse_flux_given_at_ref_energy = diffuse_flux_given*((ref_energy/100)**index_given)
 
 	sum_f_by_L_all_sources=0
+	
 	# Get the luminosity'
 	try: 
-		len(distance_array) #IF ERROR BECAUSE OF 1 SOURCE, THEN except condition is run where array is infact a scalar object
+		len(all_lum_d) #IF ERROR BECAUSE OF 1 SOURCE, THEN except condition is run where array is infact a scalar object
 	except:
-		sum_f_by_L_all_sources += 1/(4*np.pi*(distance_array**2))
+		sum_f_by_L_all_sources += all_lum_d
 	else:
-		for los_distance in distance_array:
-			sum_f_by_L_all_sources += 1/(4*np.pi*(los_distance**2))
+		sum_f_by_L_all_sources = all_lum_d.sum()
+		#for los_distance in distance_array:
+		#	sum_f_by_L_all_sources += 1/(4*np.pi*(los_distance**2))
 	luminosity_per_source = diffuse_flux_given_at_ref_energy/sum_f_by_L_all_sources
 
 
-	indi_flux_vals = luminosity_per_source/(4*np.pi*(distance_array**2)) # Val in TeVcm-2s-1
+	indi_flux_vals = luminosity_per_source*all_lum_d # Val in TeVcm-2s-1
 
 	indi_flux_vals_norm = indi_flux_vals/((ref_energy/100)**index_given) # Norm in TeV-1cm-2s-1
 
-	return np.asarray(indi_flux_vals_norm).astype(np.float16),np.asarray(luminosity_per_source).astype(np.float16)
+	return np.asarray(indi_flux_vals_norm),np.asarray(luminosity_per_source)
 
 
 
