@@ -247,8 +247,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 ### IN DEVELOPMENT
 """
 def	Simulate_gamma_ray_fluxes(galcentric_coords_r_phi_z   = None,
-							method_used               = "StandardCandle",
-							 plot_healpy_template_dir    = None, # Given only with Fermi-LAT_pi0 template
+							method_used               = "FermiLATpi0",
 							diffuse_flux_given          = 2.14e-15, # Tev-1cm-2s-1 Isotropic flux
 							print_output                = False,
 							full_path                   = "./ default.npy",

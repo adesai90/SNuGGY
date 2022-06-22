@@ -32,13 +32,61 @@ def get_flux_distribution(method_name,astopy_coodinates,
 									index_given,
 									ref_energy)
 
+def energy_integral_with_index(index_given,
+						   emin=1e1, #GeV
+						   emax=1e4, #GeV
+						   E0_ref=1e2): 
+	""" Derived from FIRESONG!
+	integal_{emin}^{emax} E*(E/E0)^(-index) dE"""
+	index = -1 * index_given
+	if index != 2.0:
+		integral = (emax**(2-index)-emin**(2-index)) / (2-index)
+	else:
+		integral = np.log(emax) - np.log(emin)
+	return E0_ref**index *integral
+
 
 def standard_candle(astopy_coodinates,
 					diffuse_flux_given, #TeV-1cm-2s-1
 					index_given,
 					ref_energy):
 
-	#ASSUMPtiON : No redshifts are used in the caluclation.
+	""" ASSUMPTION : No redshifts are used in the calculation.
+		This definition ensures that the standard candle luminosity is the same for any simulation of N number of sources.
+		SC Luminosity only depends on the total diffuse flux and the number of sources and not on the position of the sources
+		The total flux from these sources may or may not be exactly equal to the diffuse flux.
+
+		This is an update of the standard_candle_forced definition.
+		N
+	""" 
+	E0 = ref_energy
+
+	# Find Distances of simulated sources Along line of sight
+	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
+	# Given the total flux, find individual flux contribution
+	indi_flux_contribution = diffuse_flux_given /len(distance_array) # in TeV-1cm-2s-1 
+
+	# Now convert this to get the luminosity per source
+	mean_distance = 2.469e+22 # 8 kpc in cm, close to peak in distributions 
+	
+
+	luminosity_per_source = indi_flux_contribution * energy_integral_with_index(index_given,E0_ref=E0) * (4*np.pi*(mean_distance**2)) * 1.60218 # TeV/s -> erg/s
+
+	all_lum_d = 1/(4*np.pi*(distance_array**2))
+	del distance_array
+	
+	indi_flux_vals = luminosity_per_source*all_lum_d / (energy_integral_with_index(index_given,E0_ref=E0) * 1.60218) # Val in TeV-1cm-2s-1
+
+	return np.asarray(indi_flux_vals),np.asarray(luminosity_per_source)
+
+def standard_candle_forced(astopy_coodinates,
+					diffuse_flux_given, #TeV-1cm-2s-1
+					index_given,
+					ref_energy):
+
+	# ASSUMPtiON : No redshifts are used in the caluclation.
+	# The code forces the simulation to ensure that the sum of fluxes is exactly equalt to the diffuse flux
+	# Thus, Simulating same number of sources multiple times will give diffrerent standard candle luminosities
 
 	# Find Distance Along line of sight
 	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
