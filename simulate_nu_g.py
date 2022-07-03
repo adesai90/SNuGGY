@@ -81,7 +81,7 @@ def	simulate_positions(output_file= None,
 
 	rng = np.random.RandomState(seed)
 
-	distribution_parameters_list = [r_0,z_0,alpha,beta,h]
+	distribution_parameters_list = [r_0,z_0,alpha,beta,h,r_min,r_max,z_min,z_max]
 	"""
 	Change	this	based	on	firesong	later
 
