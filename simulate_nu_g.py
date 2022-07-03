@@ -7,16 +7,6 @@ import	os,sys
 import	argparse
 #	Numpy	/	Scipy  / Matplotlib /healpy
 import	numpy	as	np
-import	scipy
-from scipy import stats
-from scipy.interpolate import interp1d
-from scipy.optimize import curve_fit
-import matplotlib.pyplot as plt
-import matplotlib
-import healpy as hp
-
-font = {'size'   : 20}
-matplotlib.rc('font', **font)
 
 #Astropy
 from astropy import units as u
@@ -27,6 +17,7 @@ from astropy.coordinates.representation import CartesianRepresentation
 from sky_distribution import get_model
 from sampling	import	InverseCDF
 from assign_fluxes import get_flux_distribution
+from plotter import *
 
 #################################                                                                                                                                                                                             
 def Write2File(msg,logfile):
@@ -57,29 +48,40 @@ def convert_to_galactic(r_conv,z_conv,theta_conv):
 
 	del c3
 
-	return [transformed_coord,[transformed_coord.l,transformed_coord.b,transformed_coord.distance]]
+	return [transformed_coord,[np.asarray(transformed_coord.l).astype(np.float16),np.asarray(transformed_coord.b).astype(np.float16),np.asarray(transformed_coord.distance).astype(np.float16)]]
 	
 
 def	simulate_positions(output_file= None,
 			distribution_model    ="exponential",
 			number_sources_used	  =	1000,
 			seed                  =	None,
-			plot_dir              = None,
+			plot_dir              = None, #to make plot in xyz
 			plot_aitoff_dir_icrs  = None,
 			plot_aitoff_dir_gal   = None,
-			filename              = None
-			):
+			filename              = None,
+			make_pdf_plot_location= None, # To make pdf plots
+			# LIMITS Below, generally set to high vals for inf
+			z_max	              = 300.0,  #kpc
+			z_min	              = 1e-06, #kpc
+			r_max		          =	1000000.0, #kpc
+			r_min	              =	0.001,  #kpc
+			# r_0 z_0 for distributions made using simple exponential
+			z_0		              =	0.6,  #kpc
+			r_0	                  =	3.0,   #kpc
+			# alpha beta h for distributions made using modified exponential ,fixed to SNR as default
+			alpha	              = 2,
+			beta	              = 3.53,
+			h	                  = 0.181, #kpc
+			#number of bins
+			bins                  = 1000):
 	
 
-	z_max=0.5 #kpc
-	r_0	=	3.0	#kpc
-	z_0	=	0.6	#kpc
-	r_max	=	15.	#	??????????
-	bins=1000
+	
+	#bins=1000
 
 	rng = np.random.RandomState(seed)
 
-
+	distribution_parameters_list = [r_0,z_0,alpha,beta,h,r_min,r_max,z_min,z_max]
 	"""
 	Change	this	based	on	firesong	later
 
@@ -88,58 +90,57 @@ def	simulate_positions(output_file= None,
 	Px(x)	=	integrateP(x,y)dy
 
 	"""
+	if make_pdf_plot_location!=None:
+		get_model(distribution_model,distribution_parameters_list,0,1,make_pdf_plot_location)
+		make_pdf_plot_location=None
+	
+	if make_pdf_plot_location!=None:
+		print("Something went wrong")
+	
+	# CONVERTING 2D PDF TO 1D TO GET SAMPLES
+
+	binning_used_z = np.geomspace(z_min,z_max,num=bins)
+	binning_used_r = np.geomspace(r_min,r_max,num=bins)
+
+	vertical_height_z_pdf = get_model(distribution_model,distribution_parameters_list,0,binning_used_z,make_pdf_plot_location)
+	distance_pdf=	2*np.pi*get_model(distribution_model,distribution_parameters_list,binning_used_r,0,make_pdf_plot_location)
+
+
+	invCDF_vertical_height_z	=	InverseCDF(binning_used_z,	vertical_height_z_pdf)
+
+	invCDF_distance_r	=	InverseCDF(binning_used_r,	distance_pdf)
 
 
 	# CREATE R and z BINS TO SAMPLE FROM
-	distance_bins	=	np.arange(0.,	r_max,	r_max/float(bins))
-	vertical_height_z_bins	=	np.arange(-z_max,	z_max,	z_max/float(bins))
-
-
-	# SAMPLE FROM 2D PDF, FIRST ONLY z PDF IS USED BY INTEGRATING OVER R
-	# THEN INVERSE CDF METHOD FROM FIRESONG IS USED TO SAMPLE AND GET z VALUES
-	# FOR EACH z VALUE, NOW CDF IS CREATED TO GET R VALUES WHICH IS USED TO SAMPLE R
-
-	vertical_height_z_pdf	=	np.ones(len(vertical_height_z_bins))
-	for	index_loop	in	range(len(vertical_height_z_pdf)):
-		vertical_height_z_pdf[index_loop]	=	scipy.integrate.quad(lambda	r_integrate:	get_model(distribution_model,r_0,z_0,r_integrate,vertical_height_z_bins[index_loop]),0,r_max)[0]
+	distance_bins	=	np.logspace(-5,	np.log10(r_max),	bins)
+	vertical_height_z_bins	=	np.arange(z_min,	z_max,	(z_max-z_min)/float(bins))
 
 	
-	invCDF_vertical_height_z	=	InverseCDF(vertical_height_z_bins,	vertical_height_z_pdf)
-
-	selected_z=[]
-	selected_r=[]
-
-	for	index_distribution	in	range(0,number_sources_used):	
-		random_val_used1	=	rng.uniform(0,	1)
-		z_selected	=	invCDF_vertical_height_z(random_val_used1)
-		selected_z.append(float(z_selected))
-
-		# NOW GETTING R
-		distance_pdf=np.ones(len(distance_bins))
-		# ABHISHEK: Can spEed up this by integrating into cdf or other definition
-		for	index_loop_per_z	in	range(len(distance_bins)):
-			distance_pdf[index_loop_per_z]	=	get_model(distribution_model,r_0,z_0,distance_bins[index_loop_per_z],z_selected)
-
-		invCDF_distance	=	InverseCDF(distance_bins,	distance_pdf)
-		random_val_used2	=	rng.uniform(0,	1)
-		r_selected	=	invCDF_distance(random_val_used2)
-		selected_r.append(float(r_selected))
-
-
+	
+	rng = np.random.RandomState(seed)
+	
+	random_val_used1	=	rng.uniform(0,	1,size=number_sources_used)
+	selected_z	=	invCDF_vertical_height_z(random_val_used1)
+	selected_r	=	invCDF_distance_r(random_val_used1)
+	del random_val_used1
+	np.random.shuffle(selected_r)
+	np.random.shuffle(selected_z)
+	selected_z[:int(number_sources_used/2)]=-1*selected_z[:int(number_sources_used/2)]
+	np.random.shuffle(selected_z)
+	
 
 	#
 	# GETTING RANDOM PHI (AZIMUTH ANGLE) VALUES AND THEN PERFORM CORRD CONVERSION
 	#
 	selected_angles = np.random.uniform(0,2*np.pi,len(selected_r))
-
+	
 	array_coords_in_Galactocentric = [selected_r,selected_z,selected_angles] #kpc kpc rad
 	coord_conversion = convert_to_galactic(selected_r,selected_z,selected_angles)
 	astropy_coords_in_galactic = coord_conversion[0]
 	array_coords_in_galactic = coord_conversion[1]
-	
+
 	
 	del coord_conversion
-
 
 	# PLOTTING SECTIONS, REPLACE NONE BY PATHS WHILE CALLING DEF TO PLOT.
 	if plot_dir!=None:
@@ -147,49 +148,18 @@ def	simulate_positions(output_file= None,
 			os.mkdir(plot_dir)
 			plot_dir
 	if plot_dir!= None:
-		fig = plt.figure(figsize=(15,15),dpi=200)
-		ax = fig.add_subplot(111, projection='3d')
-		ax.scatter(astropy_coords_in_galactic.transform_to(coord.Galactocentric).x,
-					astropy_coords_in_galactic.transform_to(coord.Galactocentric).y,
-					astropy_coords_in_galactic.transform_to(coord.Galactocentric).z) # plot the point (2,3,4) on the figure
-		ax.set_title("Simulated Sources in Galactocentric Coordinates")
-		ax.set_xlabel("\n x (kpc)")
-		ax.set_ylabel("\n y (kpc)")
-		ax.set_zlabel("\n z (kpc)")
-		plt.savefig(plot_dir+"3d_plot_of_simulated_sources.png",bbox="tight")
-
-
+		make_3d_plot(astropy_coords_in_galactic,plot_dir)
 	if plot_aitoff_dir_gal!= None:
-		fig = plt.figure(figsize=(15,9),dpi=250)
-		fig.add_subplot(111, projection='aitoff')
-		ra = astropy_coords_in_galactic.l.wrap_at(180 * u.deg).radian
-		dec = astropy_coords_in_galactic.b.wrap_at(180 * u.deg).radian
-		plt.plot(ra,dec,'.', label="Simulated Sources in Galactic Coordinates",alpha=0.5,zorder=0)
-		plt.legend(loc="lower right")
-		plt.xlabel('l',fontsize=18)
-		plt.ylabel('b.',fontsize=18)
-		plt.grid(True)
-		plt.savefig(plot_aitoff_dir_gal+"galactic_aitoff_of_simulated_sources.png",bbox="tight")
-
-
+		make_gal_aitoff_plot(astropy_coords_in_galactic,plot_aitoff_dir_gal)
 	if plot_aitoff_dir_icrs!= None:
-		fig = plt.figure(figsize=(15,9),dpi=250)
-		fig.add_subplot(111, projection='aitoff')
-		ra2 = astropy_coords_in_galactic.transform_to(coord.ICRS).ra.wrap_at(180 * u.deg).radian
-		dec2 = astropy_coords_in_galactic.transform_to(coord.ICRS).dec.radian
-		ra2, dec2 = zip(*sorted(zip(ra2,dec2)))
-		plt.plot(ra2,dec2,'.', label="Simulated Sources in ICRS Coordinates",alpha=0.5,zorder=0)
-		plt.legend(loc="lower right")
-		plt.xlabel('R.A.',fontsize=18)
-		plt.ylabel('Decl.',fontsize=18)
-		plt.grid(True)
-		plt.savefig(plot_aitoff_dir_icrs+"icrs_aitoff_of_simulated_sources.png",bbox="tight")
+		make_icrs_aitoff_plot(astropy_coords_in_galactic,plot_aitoff_dir_icrs)
+	
 
 
 	if filename != None and output_file!=None:
 		output_file_full_path = output_file+filename
 	elif output_file!=None and filename == None:
-		output_file_full_path = output_file+"simulated_%s_source_coordinates.txt"%(number_sources_used)
+		output_file_full_path = output_file+"simulated_%s_source_coordinates.npz"%(number_sources_used)
 	else:
 		output_file_full_path = None
 
@@ -206,7 +176,15 @@ def	simulate_positions(output_file= None,
 		if os.path.isfile(output_file_full_path)==True:
 			os.remove(output_file_full_path)
 
-
+		
+		
+		np.savez_compressed(output_file_full_path,r=selected_r,
+									  phi=selected_angles,
+									  z=selected_z,
+									  gal_l=astropy_coords_in_galactic.l.deg,
+									  gal_b=astropy_coords_in_galactic.b.deg,
+									  gal_d=astropy_coords_in_galactic.distance.kpc)
+		"""
 		for index_coords in range(number_sources_used):
 			#array_coords_in_Galactocentric = [selected_z,selected_r,selected_angles]
 			
@@ -219,6 +197,7 @@ def	simulate_positions(output_file= None,
 											)
 			
 			Write2File(line,output_file_full_path)
+		"""
 
 	
 	return [array_coords_in_Galactocentric,array_coords_in_galactic,astropy_coords_in_galactic]
@@ -229,10 +208,13 @@ def	simulate_positions(output_file= None,
 def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 							method_used               = "StandardCandle",
 							 plot_healpy_template_dir    = None, # Given only with Fermi-LAT_pi0 template
-							diffuse_flux_given          = 1.44e-8, # GeV cm-2 s-1 sr(e2dN/de = 1.44e-8 (e/100)^-2.28)
+							diffuse_flux_given          = 2.14e-15, # Tev-1cm-2s-1 Isotropic flux
 							print_output                = False,
-							full_path                   = "./default.npy"
-							):
+							full_path                   = "./ default.npy",
+							index_given                 = 2.7,
+							ref_energy                  = 100.0): #TeV
+
+	index_given=index_given*(-1.0)
 
 	if galcentric_coords_r_phi_z==None:
 		print("Error: Give Source Positions in r,z,phi Coordinates for ARRAY FORMAT")
@@ -241,30 +223,64 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 	astropy_coords_in_galactic = convert_to_galactic(galcentric_coords_r_phi_z[0],galcentric_coords_r_phi_z[1],galcentric_coords_r_phi_z[2])[0]
 	
 
-	simulated_fluxes = get_flux_distribution(method_used,astropy_coords_in_galactic,diffuse_flux_given)
+	simulated_fluxes, sc_luminosity = get_flux_distribution(method_used,astropy_coords_in_galactic,
+															diffuse_flux_given, #TeV-1cm-2s-1
+															index_given,
+															ref_energy)
     
 
-	#
-	# PLOT FERMIPI0 TEMPLATE USING HEALPY IF DIR IS SPECIFIED
-	#
-
-	if method_used=="Fermi-LAT_pi0" and plot_healpy_template_dir != None:
-		fig = plt.figure(figsize=(15,9),dpi=250)
-		hp.mollview(template,
-					coord=["C", "G"],
-					norm="hist", 
-					unit="$\pi^0$-decay",
-					title="Fermi LAT $\pi^0$-decay template with histogram equalized color mapping",
-					hold=True)
-		plt.savefig(plot_healpy_template_dir+"fermi_pi0_decay_template_in_galactic_coords.png",bbox="tight")
+	array_l=np.asarray(astropy_coords_in_galactic.l.deg).astype(np.float16)
+	array_b=np.asarray(astropy_coords_in_galactic.b.deg).astype(np.float16)
+	array_distance=np.asarray(astropy_coords_in_galactic.distance.kpc).astype(np.float16)
 
 
 
 	if print_output == True:
-		np.savez(full_path,[astropy_coords_in_galactic,simulated_fluxes])
+		np.savez_compressed(full_path,[array_l,array_b,array_distance,simulated_fluxes,sc_luminosity])
 
 
-	return [astropy_coords_in_galactic,simulated_fluxes]
+	return [astropy_coords_in_galactic,simulated_fluxes,sc_luminosity]
+
+
+
+
+### IN DEVELOPMENT
+"""
+def	Simulate_gamma_ray_fluxes(galcentric_coords_r_phi_z   = None,
+							method_used               = "FermiLATpi0",
+							diffuse_flux_given          = 2.14e-15, # Tev-1cm-2s-1 Isotropic flux
+							print_output                = False,
+							full_path                   = "./ default.npy",
+							index_given                 = 2.7,
+							ref_energy                  = 100.0): #TeV
+
+	index_given=index_given*(-1.0)
+
+	if galcentric_coords_r_phi_z==None:
+		print("Error: Give Source Positions in r,z,phi Coordinates for ARRAY FORMAT")
+		exit()
+
+	astropy_coords_in_galactic = convert_to_galactic(galcentric_coords_r_phi_z[0],galcentric_coords_r_phi_z[1],galcentric_coords_r_phi_z[2])[0]
+	
+
+	simulated_fluxes, sc_luminosity = get_flux_distribution(method_used,astropy_coords_in_galactic,
+															diffuse_flux_given, #TeV-1cm-2s-1
+															index_given,
+															ref_energy)
+    
+
+	array_l=np.asarray(astropy_coords_in_galactic.l.deg).astype(np.float16)
+	array_b=np.asarray(astropy_coords_in_galactic.b.deg).astype(np.float16)
+	array_distance=np.asarray(astropy_coords_in_galactic.distance.kpc).astype(np.float16)
+
+
+
+	if print_output == True:
+		np.savez_compressed(full_path,[array_l,array_b,array_distance,simulated_fluxes,sc_luminosity])
+
+
+	return [astropy_coords_in_galactic,simulated_fluxes,sc_luminosity]
+"""
 
 
 
