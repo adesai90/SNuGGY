@@ -77,7 +77,7 @@ def standard_candle(astopy_coodinates,
 	
 	indi_flux_vals = luminosity_per_source*all_lum_d / (energy_integral_with_index(index_given,E0_ref=E0) * 1.60218) # Val in TeV-1cm-2s-1
 
-	return np.asarray(indi_flux_vals),np.asarray(luminosity_per_source)
+	return np.asarray(indi_flux_vals),np.asarray(float('{:0.3e}'.format(luminosity_per_source)))
 
 def standard_candle_forced(astopy_coodinates,
 					diffuse_flux_given, #TeV-1cm-2s-1
