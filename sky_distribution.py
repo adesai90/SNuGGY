@@ -53,6 +53,7 @@ def get_model(model_name,distribution_parameters_list,r,z,make_pdf_plot_location
     	exit()
 
     if make_pdf_plot_location!=None:
+    	# The bottom values are hardcoded to make sure the peak of the pdf is visible in the plot.
     	x_arr_pdf_r = np.logspace(-3,2,100)
     	x_arr_pdf_z = np.logspace(-3,1,100)
 

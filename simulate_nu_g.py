@@ -239,13 +239,23 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																diffuse_flux_given, #TeV-1cm-2s-1
 																index_given,
 																ref_energy)
+		# NEXT PORTION GIVES GAMMA RAY FLUXES WITH LUMINOSITY PER SOURCE AT Ref energy = ref_energy/2
 		gamma_ray_fluxes = get_gamma_from_nu(astropy_coords_in_galactic,
 											simulated_fluxes,
 											ref_energy,
+											index_given,
 											pp_or_pgamma)
 		if print_output == True:
 			np.savez_compressed(full_path,[array_l,array_b,array_distance,simulated_fluxes,sc_luminosity,gamma_ray_fluxes])
-		return [astropy_coords_in_galactic,simulated_fluxes,sc_luminosity,gamma_ray_fluxes]
+
+		print("Output ARRAY is in form form of: \n \
+			0->astropy coordinates,  \n \
+			1->neutrino fluxes,  \n \
+			2->neutrino luminosities,  \n \
+			3->gamma-ray fluxes,  \n \
+			4->gamma-ray luminosities ")
+		return [astropy_coords_in_galactic,simulated_fluxes,sc_luminosity,gamma_ray_fluxes[0],gamma_ray_fluxes[1]]
+		
 	else:
 		print("METHOD IN DEVELOPMENT, NO FLUXES REPORTED!")
 

@@ -2,14 +2,14 @@
 
 import numpy as np
 import scipy
-
+import assign_fluxes
 #Astropy
 from astropy import units as u
 import astropy.coordinates as coord
 from astropy.coordinates.representation import CartesianRepresentation
 
 
-def get_gamma_flux_distribution(method_name,astopy_coodinates,
+"""def get_gamma_flux_distribution(method_name,astopy_coodinates,
 							diffuse_flux_given,
 							index_given,
 							ref_energy):
@@ -29,11 +29,12 @@ def get_gamma_flux_distribution(method_name,astopy_coodinates,
     	return methods[method_name](astopy_coodinates,
     								gamma_diffuse_flux_given,
 									index_given,
-									ref_energy)
+									ref_energy)"""
 
 def get_gamma_from_nu(astropy_coords_in_galactic,
 					  simulated_nu_fluxes,
 					  ref_energy,
+					  index_given,
 					  pp_or_pgamma):
 	"""
 	This method will make use of the neutrino-gamma ray equation, as described by eq 3 of https://arxiv.org/pdf/1805.11112.pdf
@@ -52,14 +53,25 @@ def get_gamma_from_nu(astropy_coords_in_galactic,
 		print("ERROR!!!! Give pp or pgamma as string")
 		exit()
 
-
-	E2Qv = E_nu * E_nu * simulated_nu_fluxes
+	E2Qv = E_nu * E_nu * simulated_nu_fluxes #neutrino E^2*flux
 
 	E2Qgamma = (1./3.) * E2Qv * (4./Kpi)
 
 	flux_at_Egamma = E2Qgamma/(E_gamma*E_gamma)
 
-	return flux_at_Egamma # Not that this is the flux at ref_energy/2 so 50 TeV if ref_energy is 100 TeV
+
+	# Find Distances of simulated sources Along line of sight
+	distance_array = (astropy_coords_in_galactic.transform_to(coord.ICRS).distance.to(u.cm)).value
+	
+	# Now convert this to get the luminosity per source
+	mean_distance = 2.469e+22 # 8 kpc in cm, close to peak in distributions 
+	
+
+	luminosity_per_source = flux_at_Egamma * assign_fluxes.energy_integral_with_index(index_given,E0_ref=E_gamma) * (4*np.pi*(mean_distance**2)) * 1.60218 # TeV/s -> erg/s
+
+	
+
+	return flux_at_Egamma,np.asarray(luminosity_per_source) # Note that this is the flux at ref_energy/2 so 50 TeV if ref_energy is 100 TeV
 
 
 
