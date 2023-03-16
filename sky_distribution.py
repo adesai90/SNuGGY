@@ -80,7 +80,7 @@ def get_model(model_name,distribution_parameters_list,r,z,make_pdf_plot_location
     	return
     else:
     	return models[model_name](param_used,r,z)
-    
+
 
 
 
@@ -142,9 +142,9 @@ def ExponentialSpatialDist(param_used,r,z): # param_used = r_0,z_0
 	return (exp_z*exp_dist)
 
 
-	
 
-	
+
+
 
 def ModifiedExponentialDist(param_used,r,z): # param_used = alpha,beta,h
 

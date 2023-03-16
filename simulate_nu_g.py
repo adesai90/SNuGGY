@@ -1,25 +1,20 @@
 #!/usr/bin/python
-
-
-
+# -*- coding: utf-8 -*-
 #	General	imports
 import	os,sys
 import	argparse
 #	Numpy	/	Scipy  / Matplotlib /healpy
 import	numpy	as	np
-
 #Astropy
 from astropy import units as u
 import astropy.coordinates as coord
 from astropy.coordinates.representation import CartesianRepresentation
-
 # Definitions from SNuGGY
 from sky_distribution import get_model
 from sampling	import	InverseCDF
-from assign_fluxes import get_flux_distribution
+from assign_fluxes import *
 from plotter import *
-from simulate_gamma import get_gamma_from_nu
-#################################                                                                                                                                                                                             
+
 def Write2File(msg,logfile):
 
     if logfile!="":
@@ -28,8 +23,6 @@ def Write2File(msg,logfile):
     log.close
 
     return
-#################################
-
 
 def convert_to_galactic(r_conv,z_conv,theta_conv):
 	"""
@@ -37,7 +30,6 @@ def convert_to_galactic(r_conv,z_conv,theta_conv):
 	z is vertical distance
 	theta is azimuth angle
 	"""
-
 	c = coord.CylindricalRepresentation(rho=r_conv * u.kpc,phi=theta_conv * u.radian,z=z_conv * u.kpc)
 	c2= c.represent_as(CartesianRepresentation)
 
@@ -76,20 +68,10 @@ def	simulate_positions(output_file= None,
 			bins                  = 1000):
 	
 
-	
-	#bins=1000
-
 	rng = np.random.RandomState(seed)
 
 	distribution_parameters_list = [r_0,z_0,alpha,beta,h,r_min,r_max,z_min,z_max]
-	"""
-	Change	this	based	on	firesong	later
 
-	SAMPLING	FROM	bivariate	distribution	with	joint	pdf	𝑝𝑋,𝑌(𝑥,𝑦)
-	https://stats.stackexchange.com/questions/471781/sampling-from-a-continuous-2-dimensional-probability-distribution-function-for-i
-	Px(x)	=	integrateP(x,y)dy
-
-	"""
 	if make_pdf_plot_location!=None:
 		get_model(distribution_model,distribution_parameters_list,0,1,make_pdf_plot_location)
 		make_pdf_plot_location=None
@@ -184,20 +166,6 @@ def	simulate_positions(output_file= None,
 									  gal_l=astropy_coords_in_galactic.l.deg,
 									  gal_b=astropy_coords_in_galactic.b.deg,
 									  gal_d=astropy_coords_in_galactic.distance.kpc)
-		"""
-		for index_coords in range(number_sources_used):
-			#array_coords_in_Galactocentric = [selected_z,selected_r,selected_angles]
-			
-			line="%s %s %s %s %s %s"%(selected_r[index_coords],
-									  selected_angles[index_coords],
-									  selected_z[index_coords],
-									  astropy_coords_in_galactic.l.deg[index_coords],
-									  astropy_coords_in_galactic.b.deg[index_coords],
-									  astropy_coords_in_galactic.distance.kpc[index_coords],
-											)
-			
-			Write2File(line,output_file_full_path)
-		"""
 
 	
 	return [array_coords_in_Galactocentric,array_coords_in_galactic,astropy_coords_in_galactic]
@@ -207,14 +175,20 @@ def	simulate_positions(output_file= None,
 
 def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 							method_used               = "StandardCandle",
-							plot_healpy_template_dir    = None, # Given only with Fermi-LAT_pi0 template
 							diffuse_flux_given          = 2.14e-15, # Tev-1cm-2s-1 Isotropic flux
 							print_output                = False,
-							full_path                   = "./ default.npy",
+							full_path                   = None, #"./ default.npy",
 							index_given                 = 2.7,
-							ref_energy                  = 100.0,
+							ref_energy                  = 100.0, #NEUTRINO reference energy
 							simulate_gamma_ray_frm_nu	= True,
-							pp_or_pgamma				= "pp"): #TeV
+							pp_or_pgamma				= "pp",
+							median_luminosity=None,
+							stdev_sigma_L=1.): #TeV
+
+	nu_ref_energy = ref_energy
+	gamma_ray_ref_energy = nu_ref_energy/2.
+
+	print("Reference energy:\n Neutrino:%s TeV \n Gamma-rays:%s TeV"%(nu_ref_energy,gamma_ray_ref_energy))
 
 	if simulate_gamma_ray_frm_nu==True:
 		print("This method computes neutrino flux and then converts it to gamma ray fluxes based on neutrino gamma ray relation.")
@@ -234,19 +208,23 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 		array_distance=np.asarray(astropy_coords_in_galactic.distance.kpc).astype(np.float16)
 
 
-	
-		simulated_fluxes, sc_luminosity = get_flux_distribution(method_used,astropy_coords_in_galactic,
+		nu_fluxes,nu_luminosity = get_flux_distribution(method_used,astropy_coords_in_galactic,
 																diffuse_flux_given, #TeV-1cm-2s-1
 																index_given,
-																ref_energy)
+																nu_ref_energy,
+																median_luminosity,
+																stdev_sigma_L)
+		
+
+		
 		# NEXT PORTION GIVES GAMMA RAY FLUXES WITH LUMINOSITY PER SOURCE AT Ref energy = ref_energy/2
-		gamma_ray_fluxes = get_gamma_from_nu(astropy_coords_in_galactic,
-											simulated_fluxes,
-											ref_energy,
+		gamma_fluxes, gamma_luminosity = get_nu_from_gamma(astropy_coords_in_galactic,
+											nu_fluxes,
+											nu_ref_energy,
 											index_given,
 											pp_or_pgamma)
 		if print_output == True:
-			np.savez_compressed(full_path,[array_l,array_b,array_distance,simulated_fluxes,sc_luminosity,gamma_ray_fluxes])
+			np.savez_compressed(full_path,[array_l,array_b,array_distance,nu_fluxes,nu_luminosity,gamma_fluxes, gamma_luminosity])
 
 		print("Output ARRAY is in form form of: \n \
 			0->astropy coordinates,  \n \
@@ -254,11 +232,50 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 			2->neutrino luminosities,  \n \
 			3->gamma-ray fluxes,  \n \
 			4->gamma-ray luminosities ")
-		return [astropy_coords_in_galactic,simulated_fluxes,sc_luminosity,gamma_ray_fluxes[0],gamma_ray_fluxes[1]]
+		return [astropy_coords_in_galactic,nu_fluxes,nu_luminosity,gamma_fluxes, gamma_luminosity]
 		
 	else:
-		print("METHOD IN DEVELOPMENT, NO FLUXES REPORTED!")
+		print("This method computes Gamma ray flux and then converts it to neutrino fluxes based on neutrino gamma ray relation.")
 
+		index_given=index_given*(-1.0)
+
+		if galcentric_coords_r_phi_z==None:
+			print("Error: Give Source Positions in r,z,phi Coordinates for ARRAY FORMAT")
+			exit()
+
+		astropy_coords_in_galactic = convert_to_galactic(galcentric_coords_r_phi_z[0],galcentric_coords_r_phi_z[1],galcentric_coords_r_phi_z[2])[0]
+	
+   
+		array_l=np.asarray(astropy_coords_in_galactic.l.deg).astype(np.float16)
+		array_b=np.asarray(astropy_coords_in_galactic.b.deg).astype(np.float16)
+		array_distance=np.asarray(astropy_coords_in_galactic.distance.kpc).astype(np.float16)
+
+
+		gamma_fluxes, gamma_luminosity = get_flux_distribution(method_used,astropy_coords_in_galactic,
+																diffuse_flux_given, #TeV-1cm-2s-1
+																index_given,
+																gamma_ray_ref_energy,
+																median_luminosity,
+																stdev_sigma_L)
+		
+		# NEXT PORTION GIVES GAMMA RAY FLUXES WITH LUMINOSITY PER SOURCE AT Ref energy = ref_energy/2
+		nu_fluxes,nu_luminosity = get_nu_from_gamma(astropy_coords_in_galactic,
+											gamma_fluxes,
+											gamma_ray_ref_energy,
+											index_given,
+											pp_or_pgamma)
+		if print_output == True:
+			np.savez_compressed(full_path,[array_l,array_b,array_distance,nu_fluxes,nu_luminosity,gamma_fluxes, gamma_luminosity])
+
+		print("Output ARRAY is in form form of: \n \
+			0->astropy coordinates,  \n \
+			1->neutrino fluxes,  \n \
+			2->neutrino luminosities,  \n \
+			3->gamma-ray fluxes,  \n \
+			4->gamma-ray luminosities ")
+		return [astropy_coords_in_galactic,nu_fluxes,nu_luminosity,gamma_fluxes, gamma_luminosity]
+
+		
 
 
 

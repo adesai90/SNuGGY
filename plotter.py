@@ -7,7 +7,7 @@ import astropy.coordinates as coord
 from astropy.coordinates.representation import CartesianRepresentation
 
 
-font = {'size'   : 20}
+font = {'size'   : 25}
 matplotlib.rc('font', **font)
  
 
