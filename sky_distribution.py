@@ -53,6 +53,7 @@ def get_model(model_name,distribution_parameters_list,r,z,make_pdf_plot_location
     	exit()
 
     if make_pdf_plot_location!=None:
+    	# The bottom values are hardcoded to make sure the peak of the pdf is visible in the plot.
     	x_arr_pdf_r = np.logspace(-3,2,100)
     	x_arr_pdf_z = np.logspace(-3,1,100)
 
@@ -79,7 +80,7 @@ def get_model(model_name,distribution_parameters_list,r,z,make_pdf_plot_location
     	return
     else:
     	return models[model_name](param_used,r,z)
-    
+
 
 
 
@@ -141,9 +142,9 @@ def ExponentialSpatialDist(param_used,r,z): # param_used = r_0,z_0
 	return (exp_z*exp_dist)
 
 
-	
 
-	
+
+
 
 def ModifiedExponentialDist(param_used,r,z): # param_used = alpha,beta,h
 

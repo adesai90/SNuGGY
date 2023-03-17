@@ -7,15 +7,94 @@ import scipy
 from astropy import units as u
 import astropy.coordinates as coord
 from astropy.coordinates.representation import CartesianRepresentation
+from sampling	import	InverseCDF
+import matplotlib.pyplot as plt
+import matplotlib
+
+font = {'size'   : 20}
+matplotlib.rc('font', **font)
+"""
+First two definitions are used to get neutrino or gamma ray fluxes provided the other is known
+
+Next defintions estimate the flux for the case of different luminosity function cases.
+This can be used for both neutrinos and gamma rays
+
+"""
+def get_gamma_from_nu(astropy_coords_in_galactic,
+					  simulated_nu_fluxes,
+					  nu_ref_energy, #Nu ref energy
+					  index_given,
+					  pp_or_pgamma):
+	"""
+	This method will make use of the neutrino-gamma ray equation, as described by eq 3 of https://arxiv.org/pdf/1805.11112.pdf
+	given as:
+	1/3sum(Ev^2 Qv(Ev)) ~ (Kpi/4) * [Eg^2 Qg(Eg)]Eg=2Ev
+	"""
+	E_nu = nu_ref_energy
+	E_gamma = nu_ref_energy/2.
+	if pp_or_pgamma=="pp":
+		Kpi = 2.
+	elif pp_or_pgamma=="pgamma":
+		Kpi = 1.
+	else:
+		print("ERROR!!!! Give pp or pgamma as string")
+		exit()
+	E2Qv = E_nu * E_nu * simulated_nu_fluxes #neutrino E^2*flux
+	E2Qgamma = (1./3.) * E2Qv * (4./Kpi)
+	flux_at_Egamma = E2Qgamma/(E_gamma*E_gamma)
+	# Find Distances of simulated sources Along line of sight
+	distance_array = (astropy_coords_in_galactic.transform_to(coord.ICRS).distance.to(u.cm)).value
+	# Now convert this to get the luminosity per source
+	mean_distance = 2.469e+22 # 8 kpc in cm, close to peak in distributions 
+	luminosity_per_source = flux_at_Egamma * energy_integral_with_index(index_given,E0_ref=E_gamma) * (4*np.pi*(mean_distance**2)) * 1.60218 # TeV/s -> erg/s
+	return flux_at_Egamma,np.asarray(luminosity_per_source) # Note that this is the flux at ref_energy/2 so 50 TeV if ref_energy is 100 TeV
+
+
+def get_nu_from_gamma(astropy_coords_in_galactic,
+					  simulated_gamma_fluxes,
+					  gamma_ray_ref_energy, #gamma ref energy
+					  index_given,
+					  pp_or_pgamma):
+	"""
+	This method will make use of the neutrino-gamma ray equation, as described by eq 3 of https://arxiv.org/pdf/1805.11112.pdf
+	given as:
+	1/3sum(Ev^2 Qv(Ev)) ~ (Kpi/4) * [Eg^2 Qg(Eg)]Eg=2Ev
+	"""
+	E_nu = gamma_ray_ref_energy*2.
+	E_gamma = gamma_ray_ref_energy
+	if pp_or_pgamma=="pp":
+		Kpi = 2.
+	elif pp_or_pgamma=="pgamma":
+		Kpi = 1.
+	else:
+		print("ERROR!!!! Give pp or pgamma as string")
+		exit()
+	E2Qgamma = E_gamma * E_gamma * simulated_gamma_fluxes
+	E2Qv = (3./1.) * (Kpi/4.) * E2Qgamma 
+	flux_at_Enu = E2Qv/(E_nu * E_nu)
+	# Find Distances of simulated sources Along line of sight
+	distance_array = (astropy_coords_in_galactic.transform_to(coord.ICRS).distance.to(u.cm)).value
+	# Now convert this to get the luminosity per source
+	mean_distance = 2.469e+22 # 8 kpc in cm, close to peak in distributions 
+	luminosity_per_source = flux_at_Enu * energy_integral_with_index(index_given,E0_ref=E_gamma) * (4*np.pi*(mean_distance**2)) * 1.60218 # TeV/s -> erg/s
+	return flux_at_Enu,np.asarray(luminosity_per_source) # Note that this is the flux at ref_energy/2 so 50 TeV if ref_energy is 100 TeV
+
+
+"""
+Now comes the defintions which make use of different luminosty functions
+"""
 
 
 def get_flux_distribution(method_name,astopy_coodinates,
 							diffuse_flux_given,
 							index_given,
-							ref_energy):
+							ref_energy,
+							median_luminosity,
+							stdev_sigma_L):
     methods = {"StandardCandle": standard_candle,
-    		   "LogNormal": log_normal,
-    		  "Fermi-LAT_pi0": fermilatpi0}
+    		"Forced_standardCandle": standard_candle_forced, #sum of simulated fluex is exactly equal to diffuse flux
+    		"LogNormal": log_normal}
+    #"observed_sample": source_count_obsevred}
    
 
     if not method_name in methods.keys():
@@ -30,7 +109,10 @@ def get_flux_distribution(method_name,astopy_coodinates,
     	return methods[method_name](astopy_coodinates,
     								diffuse_flux_given,
 									index_given,
-									ref_energy)
+									ref_energy,
+									median_luminosity,
+									stdev_sigma_L)
+
 
 def energy_integral_with_index(index_given,
 						   emin=1e1, #GeV
@@ -77,7 +159,7 @@ def standard_candle(astopy_coodinates,
 	
 	indi_flux_vals = luminosity_per_source*all_lum_d / (energy_integral_with_index(index_given,E0_ref=E0) * 1.60218) # Val in TeV-1cm-2s-1
 
-	return np.asarray(indi_flux_vals),np.asarray(luminosity_per_source)
+	return np.asarray(indi_flux_vals),np.asarray(float('{:0.3e}'.format(luminosity_per_source)))
 
 def standard_candle_forced(astopy_coodinates,
 					diffuse_flux_given, #TeV-1cm-2s-1
@@ -124,26 +206,78 @@ def standard_candle_forced(astopy_coodinates,
 
 ### BELOW: TO BE UPDATED ##########
 
-def log_normal(astopy_coodinates,diffuse_flux_given,nsource,stdev_sigma_L=1.4,mean_luminosity=10**(32.1)):
+
+def pdf_fuction_for_ln(L,
+						L_med,
+						sigma_L):
+	#Taking ln() based on 2.1 of https://arxiv.org/pdf/1705.00806.pdf
+	return (np.log10(np.exp(1))/(sigma_L*L*np.sqrt(2*np.pi)))*np.exp(-((np.log10(L)-np.log10(L_med))**2)/(2*(sigma_L**2)))
+
+
+def log_normal(astopy_coodinates,
+				diffuse_flux_given,
+				index_given,
+				ref_energy,
+				median_luminosity,
+				stdev_sigma_L):
 	"""
 	From  https://arxiv.org/pdf/1705.00806.pdf
+	and https://arxiv.org/pdf/2112.09699.pdf
 	Probability Density is given by:
-	p(L) = (1/(sigma_L L sqrt(2pi))) exp(-(lnL-lnLmed)^2/(2 sigma_L^2))
+	p(L) = (log10(e)/(sigma_L L sqrt(2pi))) exp(-(log10(L)-log10(Lmed))^2/(2 sigma_L^2))
 	
-	L=Luminosity
+	
 	L_med = Median luminosity
-	ln(Lmed) =  mean of normal distribution in ln(L)
-	sigma_L = standard deviation  of normal distribution in ln(L)
+	If Median luminosity is not given it is derived using the diffuse flux.  
+	This is done by first finding the SC luminosity and then using that value as the median to get the log normal distribution.
 
-	Mean and Median Luminosity Values are taken from here.
+	Be Careful as the energy range of interst here is really high probably for eg. 100 TeV for neutrinos and 50 TeV for gamma-rays
+	So luminosity values might be lower at those reference energies. Change the reference energy based on luminosity value
 	"""
 
+
+	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
+	all_lum_d = 1/(4*np.pi*(distance_array**2))
+
+	if median_luminosity==None:
+		print("Getting SC luminosity from diffuse flux")
+		#Find Distance Along line of sight
+		diffuse_flux_given_at_ref_energy = diffuse_flux_given*((ref_energy/100)**index_given)
+		sum_f_by_L_all_sources=0
+		# Get the luminosity'
+		try: 
+				len(all_lum_d) #IF ERROR BECAUSE OF 1 SOURCE, THEN except condition is run where array is infact a scalar object
+		except:
+				sum_f_by_L_all_sources += all_lum_d
+		else:
+				sum_f_by_L_all_sources = all_lum_d.sum()
+
+		median_luminosity = diffuse_flux_given_at_ref_energy/sum_f_by_L_all_sources
+		print("Derived luminosity of: ",median_luminosity)
 	
 
-	mean = mean_luminosity		 # mean lum is in erg/s
-	logmean = np.log(mean)       # log mean luminosity
-	sigma = stdev_sigma_L        # sigma is given in ln
-	mu = logmean-sigma**2./2.  # log median luminosity
+	L_med = median_luminosity       # log mead luminosity
+	sigma_L = stdev_sigma_L        # sigma is given in ln
+	
+
+	log_bins = np.logspace(np.log10(median_luminosity)-15,np.log10(median_luminosity)+15,1000)
+
+	pdf_lognorm = pdf_fuction_for_ln(log_bins,L_med,sigma_L)
+
+	pdf_lognorm = pdf_lognorm/np.sum(pdf_lognorm)
+
+	#x_arr_pdf_ln = log_bins
+	#fig, ax = plt.subplots(1,1,figsize=(18,9),dpi=100)
+	#ax.plot(x_arr_pdf_ln,pdf_lognorm)
+	#ax.set_xlabel('Luminosity TeV/cm2')
+	#ax.set_ylabel('PDF')
+	#ax.set_xscale('log')
+	#ax.set_yscale('log')
+	#plt.show()
+
+
+	
+	invCDF_log_lum	=	InverseCDF(log_bins,	pdf_lognorm)
 
 	try: 
 		len(distance_array) #IF ERROR BECAUSE OF 1 SOURCE, THEN except condition is run where array is infact a scalar object
@@ -152,139 +286,14 @@ def log_normal(astopy_coodinates,diffuse_flux_given,nsource,stdev_sigma_L=1.4,me
 	else:
 		nsource=len(distance_array)
 
+
 	rng = np.random.RandomState()
-	sample_distribution = rng.lognormal(mu, sigma, nsource)
-	return sample_distribution
+	rng_arr = rng.uniform(0,	1,size=nsource)
+	selected_lum =invCDF_log_lum(rng_arr)
 
-
-def pdf(self, lumi):
-        """ Gives the value of the PDF at lumi.
-
-        Parameters:
-            lumi: float or array-like, point where PDF is evaluated.
-
-        Notes:
-            PDF given by:
-                     1                 /     (ln(x) - mu)^2   \
-            -------------------- * exp | -  ----------------  |
-             x sigma sqrt(2 pi)        \       2 sigma^2      /
-        """
-        return np.exp(self.mu) * \
-            lognorm.pdf(lumi, s=self.sigma, scale=np.exp(self.mu))
-def cdf(self, lumi):
-        """ Gives the value of the CDF at lumi.
-
-        Parameters:
-            lumi: float or array-like, point where CDF is evaluated.
-
-        Notes:
-            CDF given by:
-             1     1       /  (ln(x) - mu)^2   \
-            --- + --- erf |  ----------------   |
-             2     2       \   sqrt(2) sigma   /
-        """
-        return lognorm.cdf(lumi, s=self.sigma, scale=np.exp(self.mu))
-
-
-def fermilatpi0(astopy_coodinates):
-	#
-	# USE HEALPY TO LOAD TEMPLATES
-	#
-
-	template = np.load("Fermi-LAT_pi0_map.npy")
-
-	# HEALPY SETUP TAKEN FROM CSKY 
-
-	npix = template.shape[0]
-	nside = hp.npix2nside(npix) # npix = 12*nside**2
-	pixarea = hp.nside2pixarea(nside) 
-	# np.r_[:npix] is [0,1,2......npix]
-	pix_zenith,pix_ra = hp.pix2ang(nside, np.r_[:npix]) #converts from pixel index to spherical polar coordinates;
-	pix_dec = np.pi/2 - pix_zenith
-	template /= template.sum() * pixarea		
-
+	indi_flux_vals = np.asarray(selected_lum)*np.asarray(all_lum_d) # Val in TeVcm-2s-1
 
 	
-	"""
-	LOGIC USED TO DERIVE FLUXES:
-
-	The pi0 decay template gives the decay values at a given position.
-	
-	We know from pp interactions:
-		pp −→ Nπ[π+ + π− + π0] + X
-		π+ −→ µ+ + ¯νµ
-		µ+ −→ e+ +νe + ¯νµ
-
-		π0 −→ γ + γ
-
-
-	We assume the simplest case where the neutrino flux is directly proportional to the pi0 decay,
-	i.e. ignoring any constants as we are just interested on how the flux is scaled as a function of distance
-
-	The diffuse flux normalization is then used to give the per source flux.
-
-	No Energy information is used (yet)
-
-	"""
-
-	#
-	# GET COORDINATES OF SOURCES AND LOAD ASTROPY FORMAT
-	#
-	
-	
-
-
-	#
-	# CONVERT GALACTIC ASTROPY COORDINATES TO HEALPY READABLE FORMAT
-	#
-
-	# Convert Galactic coordinates to ICRS
-	# Healpy uses theta and phi, where phi=ra (radians) and dec=pi/2-theta (NOT SURE ABOUT THIS! CHECK)
-
-	phi  = astropy_coords_in_galactic.transform_to(coord.ICRS).ra.radian
-	theta = 0.5 * np.pi - astropy_coords_in_galactic.transform_to(coord.ICRS).dec.radian
-	radius = 0.2 #Radius (DEG) of the circle on the map to locate point. Kept minimum
-
-	xyz = hp.ang2vec(theta, phi)
-
-
-	# IF conditions are used in case no point is found on template. So radius is increased
-	flux_norm_per_source=[]
-	try: 
-		print("NUMBER OF SOURCES = ",len(phi))
-	except:
-		print("ONLY 1 SOURCE!")
-		ipix_disc = hp.query_disc(nside, xyz, np.deg2rad(radius))
-		if len(template[ipix_disc])==0:
-			ipix_disc = hp.query_disc(nside, xyz, np.deg2rad(radius+0.1))
-		if len(template[ipix_disc])==0:
-			ipix_disc = hp.query_disc(nside, xyz, np.deg2rad(radius+0.2))
-		flux_norm_per_source.append(template[ipix_disc][0])
-	else:
-		for index_indi_point in range(len(xyz)):
-			ipix_disc = hp.query_disc(nside, xyz[index_indi_point], np.deg2rad(radius))
-			if len(template[ipix_disc])==0:
-				ipix_disc = hp.query_disc(nside, xyz[index_indi_point], np.deg2rad(radius+0.1))
-			if len(template[ipix_disc])==0:
-				ipix_disc = hp.query_disc(nside, xyz[index_indi_point], np.deg2rad(radius+0.2))
-			flux_norm_per_source.append(template[ipix_disc][0])
-
-
-	#
-	# USE THE SCALING DERIVED FROM TEMPLATE TO GET INDIVIDUAL FLUXES BASED ON DIFFUSE FLUX
-	#
-
-	
-	flux_norm_per_source=np.asarray(flux_norm_per_source)
-
-	flux_norm_per_source = flux_norm_per_source*(diffuse_flux_given/flux_norm_per_source.sum())
-
-
-	return 
-
-
-
-
-
+	return np.asarray(indi_flux_vals),np.asarray(selected_lum)
 
 
