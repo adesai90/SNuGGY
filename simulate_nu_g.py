@@ -218,7 +218,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 
 		
 		# NEXT PORTION GIVES GAMMA RAY FLUXES WITH LUMINOSITY PER SOURCE AT Ref energy = ref_energy/2
-		gamma_fluxes, gamma_luminosity = get_nu_from_gamma(astropy_coords_in_galactic,
+		gamma_fluxes, gamma_luminosity = get_gamma_from_nu(astropy_coords_in_galactic,
 											nu_fluxes,
 											nu_ref_energy,
 											index_given,
