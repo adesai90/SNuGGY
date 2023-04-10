@@ -223,17 +223,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 											nu_ref_energy,
 											index_given,
 											pp_or_pgamma)
-		if print_output == True:
-			np.savez_compressed(full_path,[array_l,array_b,array_distance,nu_fluxes,nu_luminosity,gamma_fluxes, gamma_luminosity])
-
-		print("Output ARRAY is in form form of: \n \
-			0->astropy coordinates,  \n \
-			1->neutrino fluxes,  \n \
-			2->neutrino luminosities,  \n \
-			3->gamma-ray fluxes,  \n \
-			4->gamma-ray luminosities ")
-		return [astropy_coords_in_galactic,nu_fluxes,nu_luminosity,gamma_fluxes, gamma_luminosity]
-		
+				
 	else:
 		print("This method computes Gamma ray flux and then converts it to neutrino fluxes based on neutrino gamma ray relation.")
 
@@ -257,6 +247,8 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																gamma_ray_ref_energy,
 																median_luminosity,
 																stdev_sigma_L)
+
+
 		
 		# NEXT PORTION GIVES GAMMA RAY FLUXES WITH LUMINOSITY PER SOURCE AT Ref energy = ref_energy/2
 		nu_fluxes,nu_luminosity = get_nu_from_gamma(astropy_coords_in_galactic,
@@ -264,16 +256,22 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 											gamma_ray_ref_energy,
 											index_given,
 											pp_or_pgamma)
-		if print_output == True:
-			np.savez_compressed(full_path,[array_l,array_b,array_distance,np.asarray(nu_fluxes).astype(np.float16),np.asarray(nu_luminosity).astype(np.float16),np.asarray(gamma_fluxes).astype(np.float16), np.asarray(gamma_luminosity).astype(np.float16)])
 
-		print("Output ARRAY is in form form of: \n \
+	gamma_fluxes = np.float32(np.log10(np.asarray(gamma_fluxes)))
+	gamma_luminosity = np.float32(np.log10(np.asarray(gamma_luminosity)))
+	nu_fluxes = np.float32(np.log10(np.asarray(nu_fluxes)))
+	nu_luminosity = np.float32(np.log10(np.asarray(nu_luminosity)))
+	
+	if print_output == True:
+		np.savez_compressed(full_path,[array_l,array_b,array_distance,nu_fluxes,nu_luminosity,gamma_fluxes, gamma_luminosity])
+
+	print("Output ARRAY is in form form of: \n \
 			0->astropy coordinates,  \n \
-			1->neutrino fluxes,  \n \
-			2->neutrino luminosities,  \n \
-			3->gamma-ray fluxes,  \n \
-			4->gamma-ray luminosities ")
-		return [astropy_coords_in_galactic,nu_fluxes,nu_luminosity,gamma_fluxes, gamma_luminosity]
+			1->log neutrino fluxes,  \n \
+			2->log neutrino luminosities,  \n \
+			3->log gamma-ray fluxes,  \n \
+			4->log gamma-ray luminosities ")
+	return [astropy_coords_in_galactic,nu_fluxes,nu_luminosity,gamma_fluxes, gamma_luminosity]
 
 		
 
