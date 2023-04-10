@@ -265,7 +265,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 											index_given,
 											pp_or_pgamma)
 		if print_output == True:
-			np.savez_compressed(full_path,[array_l,array_b,array_distance,nu_fluxes,nu_luminosity,gamma_fluxes, gamma_luminosity])
+			np.savez_compressed(full_path,[array_l,array_b,array_distance,np.asarray(nu_fluxes).astype(np.float16),np.asarray(nu_luminosity).astype(np.float16),np.asarray(gamma_fluxes).astype(np.float16), np.asarray(gamma_luminosity).astype(np.float16)])
 
 		print("Output ARRAY is in form form of: \n \
 			0->astropy coordinates,  \n \
