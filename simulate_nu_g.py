@@ -287,8 +287,8 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																diffuse_gamma_flux_given, #TeV-1cm-2s-1
 																index_gamma_given,
 																gamma_ray_ref_energy,
-																median_luminosity,
-																stdev_sigma_L)
+																median_luminosity_gamma,
+																stdev_sigma_L_gamma)
 
 
 		
@@ -300,8 +300,8 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																diffuse_flux_given, #TeV-1cm-2s-1
 																index_given,
 																nu_ref_energy,
-																median_luminosity,
-																stdev_sigma_L)
+																median_luminosity_nu,
+																stdev_sigma_L_nu)
 
 	gamma_fluxes = np.float32(np.log10(np.asarray(gamma_fluxes)))
 	gamma_luminosity = np.float32(np.log10(np.asarray(gamma_luminosity)))
