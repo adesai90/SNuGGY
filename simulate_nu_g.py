@@ -188,7 +188,8 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 							pp_or_pgamma				= "pp",
 							median_luminosity_nu        = None,
 							median_luminosity_gamma     = None,
-							stdev_sigma_L=1.): #TeV
+							stdev_sigma_L_nu            = 1.,
+							stdev_sigma_L_gamma         = 1.): #TeV
 
 	nu_ref_energy = ref_energy
 	gamma_ray_ref_energy = nu_ref_energy/2.
@@ -221,7 +222,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																index_given,
 																nu_ref_energy,
 																median_luminosity_nu,
-																stdev_sigma_L)
+																stdev_sigma_L_nu)
 		
 
 		
@@ -254,7 +255,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																index_gamma_given,
 																gamma_ray_ref_energy,
 																median_luminosity_gamma,
-																stdev_sigma_L)
+																stdev_sigma_L_gamma)
 
 
 		
