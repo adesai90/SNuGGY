@@ -105,6 +105,11 @@ def get_flux_distribution(method_name,astopy_coodinates,
     								diffuse_flux_given,
 									index_given,
 									ref_energy)
+    elif method_name=="Forced_standardCandle":
+    	return methods[method_name](astopy_coodinates,
+    								diffuse_flux_given,
+									index_given,
+									ref_energy)
     elif method_name=="LogNormal":
     	return methods[method_name](astopy_coodinates,
     								diffuse_flux_given,
@@ -115,8 +120,8 @@ def get_flux_distribution(method_name,astopy_coodinates,
 
 
 def energy_integral_with_index(index_given,
-						   emin=1e1, #GeV
-						   emax=1e4, #GeV
+						   emin=1e1, #TeV
+						   emax=1e4, #TeV
 						   E0_ref=1e2): 
 	""" Derived from FIRESONG!
 	integal_{emin}^{emax} E*(E/E0)^(-index) dE"""
@@ -149,7 +154,8 @@ def standard_candle(astopy_coodinates,
 	indi_flux_contribution = diffuse_flux_given /len(distance_array) # in TeV-1cm-2s-1 
 
 	# Now convert this to get the luminosity per source
-	mean_distance = 2.469e+22 # 8 kpc in cm, close to peak in distributions 
+	print()
+	mean_distance = 1.543e+22 # 5 kpc in cm, close to peak in distributions 
 	
 
 	luminosity_per_source = indi_flux_contribution * energy_integral_with_index(index_given,E0_ref=E0) * (4*np.pi*(mean_distance**2)) * 1.60218 # TeV/s -> erg/s
@@ -171,11 +177,12 @@ def standard_candle_forced(astopy_coodinates,
 	# Thus, Simulating same number of sources multiple times will give diffrerent standard candle luminosities
 
 	# Find Distance Along line of sight
+	print("Using Forced Standard Candle Approach")
 	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
 	all_lum_d = 1/(4*np.pi*(distance_array**2))
 	del distance_array
-	#print(all_lum_d)
-	diffuse_flux_given_at_ref_energy = diffuse_flux_given*((ref_energy/100)**index_given)
+	#Should be the same as we give E0 as reference enrgy and diffuse flux at that energy as input
+	diffuse_flux_given_at_ref_energy = diffuse_flux_given*((ref_energy/ref_energy)**index_given)
 
 	sum_f_by_L_all_sources=0
 	
@@ -188,12 +195,12 @@ def standard_candle_forced(astopy_coodinates,
 		sum_f_by_L_all_sources = all_lum_d.sum()
 		#for los_distance in distance_array:
 		#	sum_f_by_L_all_sources += 1/(4*np.pi*(los_distance**2))
-	luminosity_per_source = diffuse_flux_given_at_ref_energy/sum_f_by_L_all_sources
+	luminosity_per_source = diffuse_flux_given_at_ref_energy* energy_integral_with_index(index_given,E0_ref=ref_energy)* 1.60218/sum_f_by_L_all_sources
 
 
 	indi_flux_vals = luminosity_per_source*all_lum_d # Val in TeVcm-2s-1
 
-	indi_flux_vals_norm = indi_flux_vals/((ref_energy/100)**index_given) # Norm in TeV-1cm-2s-1
+	indi_flux_vals_norm = indi_flux_vals/(energy_integral_with_index(index_given,E0_ref=ref_energy)* 1.60218) # Norm in TeV-1cm-2s-1
 
 	return np.asarray(indi_flux_vals_norm),np.asarray(luminosity_per_source)
 
@@ -211,8 +218,13 @@ def pdf_fuction_for_ln(L,
 						L_med,
 						sigma_L):
 	#Taking ln() based on 2.1 of https://arxiv.org/pdf/1705.00806.pdf
-	return (np.log10(np.exp(1))/(sigma_L*L*np.sqrt(2*np.pi)))*np.exp(-((np.log10(L)-np.log10(L_med))**2)/(2*(sigma_L**2)))
-
+	#Format for reference when luminosities are in non-log units (e.g 1e25): 
+	#(np.log10(np.exp(1))/(sigma_L*L*np.sqrt(2*np.pi)))*np.exp(-((np.log10(L)-np.log10(L_med))**2)/(2*(sigma_L**2)))
+	if L_med-100>0:
+		print("Make sure log-luminosities are given")
+		return
+	else:
+		return (np.log10(np.exp(1))/(sigma_L*(10**L)*np.sqrt(2*np.pi)))*np.exp(-((L-L_med)**2)/(2*(sigma_L**2)))
 
 def log_normal(astopy_coodinates,
 				diffuse_flux_given,
@@ -235,14 +247,16 @@ def log_normal(astopy_coodinates,
 	So luminosity values might be lower at those reference energies. Change the reference energy based on luminosity value
 	"""
 
-
+	#Find Distance Along line of sight
 	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
 	all_lum_d = 1/(4*np.pi*(distance_array**2))
 
 	if median_luminosity==None:
 		print("Getting SC luminosity from diffuse flux")
-		#Find Distance Along line of sight
-		diffuse_flux_given_at_ref_energy = diffuse_flux_given*((ref_energy/100)**index_given)
+		
+		#Diff flux Should be the same as we give E0 as reference enrgy and diffuse flux at that energy as input
+		diffuse_flux_given_at_ref_energy = diffuse_flux_given*((ref_energy/ref_energy)**index_given)
+		
 		sum_f_by_L_all_sources=0
 		# Get the luminosity'
 		try: 
@@ -252,15 +266,16 @@ def log_normal(astopy_coodinates,
 		else:
 				sum_f_by_L_all_sources = all_lum_d.sum()
 
-		median_luminosity = diffuse_flux_given_at_ref_energy/sum_f_by_L_all_sources
+		median_luminosity = diffuse_flux_given_at_ref_energy* energy_integral_with_index(index_given,E0_ref=ref_energy)* 1.60218/sum_f_by_L_all_sources
 		print("Derived luminosity of: ",median_luminosity)
 	
 
-	L_med = median_luminosity       # log mead luminosity
+	L_med = np.log10(median_luminosity*0.624151)      # log mead luminosity
 	sigma_L = stdev_sigma_L        # sigma is given in ln
 	
 
-	log_bins = np.logspace(np.log10(median_luminosity)-15,np.log10(median_luminosity)+15,1000)
+	
+	log_bins = np.arange(0,L_med+30,(L_med+30)/1000) #Simulating 1000 points
 
 	pdf_lognorm = pdf_fuction_for_ln(log_bins,L_med,sigma_L)
 
@@ -289,9 +304,11 @@ def log_normal(astopy_coodinates,
 
 	rng = np.random.RandomState()
 	rng_arr = rng.uniform(0,	1,size=nsource)
-	selected_lum =invCDF_log_lum(rng_arr)
+	selected_lum =10**invCDF_log_lum(rng_arr) # Here the log luminosities will be selected so they are converted back to luminosities
 
-	indi_flux_vals = np.asarray(selected_lum)*np.asarray(all_lum_d) # Val in TeVcm-2s-1
+	# Now we have the log luminosities, we need to convert them to fluxes.
+
+	indi_flux_vals = np.asarray(selected_lum)*np.asarray(all_lum_d)/ (energy_integral_with_index(index_given,E0_ref=ref_energy)* 1.60218) # Val in TeV-1cm-2s-1 
 
 	
 	return np.asarray(indi_flux_vals),np.asarray(selected_lum)
