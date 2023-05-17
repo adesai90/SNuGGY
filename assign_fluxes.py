@@ -90,7 +90,9 @@ def get_flux_distribution(method_name,astopy_coodinates,
 							index_given,
 							ref_energy,
 							median_luminosity,
-							stdev_sigma_L):
+							stdev_sigma_L,
+							energy_range_low,
+							energy_range_high):
     methods = {"StandardCandle": standard_candle,
     		"Forced_standardCandle": standard_candle_forced, #sum of simulated fluex is exactly equal to diffuse flux
     		"LogNormal": log_normal}
@@ -104,19 +106,25 @@ def get_flux_distribution(method_name,astopy_coodinates,
     	return methods[method_name](astopy_coodinates,
     								diffuse_flux_given,
 									index_given,
-									ref_energy)
+									ref_energy,
+									energy_range_low,
+									energy_range_high)
     elif method_name=="Forced_standardCandle":
     	return methods[method_name](astopy_coodinates,
     								diffuse_flux_given,
 									index_given,
-									ref_energy)
+									ref_energy,
+									energy_range_low,
+									energy_range_high)
     elif method_name=="LogNormal":
     	return methods[method_name](astopy_coodinates,
     								diffuse_flux_given,
 									index_given,
 									ref_energy,
 									median_luminosity,
-									stdev_sigma_L)
+									stdev_sigma_L,
+									energy_range_low,
+									energy_range_high)
 
 
 def energy_integral_with_index(index_given,
@@ -136,7 +144,9 @@ def energy_integral_with_index(index_given,
 def standard_candle(astopy_coodinates,
 					diffuse_flux_given, #TeV-1cm-2s-1
 					index_given,
-					ref_energy):
+					ref_energy,
+					energy_range_low,
+					energy_range_high):
 
 	""" ASSUMPTION : No redshifts are used in the calculation.
 		This definition ensures that the standard candle luminosity is the same for any simulation of N number of sources.
@@ -158,19 +168,21 @@ def standard_candle(astopy_coodinates,
 	mean_distance = 1.543e+22 # 5 kpc in cm, close to peak in distributions 
 	
 
-	luminosity_per_source = indi_flux_contribution * energy_integral_with_index(index_given,E0_ref=E0) * (4*np.pi*(mean_distance**2)) * 1.60218 # TeV/s -> erg/s
+	luminosity_per_source = indi_flux_contribution * energy_integral_with_index(index_given,E0_ref=E0,emin=energy_range_low,emax=energy_range_high) * (4*np.pi*(mean_distance**2)) * 1.60218 # TeV/s -> erg/s
 
 	all_lum_d = 1/(4*np.pi*(distance_array**2))
 	del distance_array
 	
-	indi_flux_vals = luminosity_per_source*all_lum_d / (energy_integral_with_index(index_given,E0_ref=E0) * 1.60218) # Val in TeV-1cm-2s-1
+	indi_flux_vals = luminosity_per_source*all_lum_d / (energy_integral_with_index(index_given,E0_ref=E0,emin=energy_range_low,emax=energy_range_high) * 1.60218) # Val in TeV-1cm-2s-1
 
 	return np.asarray(indi_flux_vals),np.asarray(float('{:0.3e}'.format(luminosity_per_source)))
 
 def standard_candle_forced(astopy_coodinates,
 					diffuse_flux_given, #TeV-1cm-2s-1
 					index_given,
-					ref_energy):
+					ref_energy,
+					energy_range_low,
+					energy_range_high):
 
 	# ASSUMPtiON : No redshifts are used in the caluclation.
 	# The code forces the simulation to ensure that the sum of fluxes is exactly equalt to the diffuse flux
@@ -195,12 +207,12 @@ def standard_candle_forced(astopy_coodinates,
 		sum_f_by_L_all_sources = all_lum_d.sum()
 		#for los_distance in distance_array:
 		#	sum_f_by_L_all_sources += 1/(4*np.pi*(los_distance**2))
-	luminosity_per_source = diffuse_flux_given_at_ref_energy* energy_integral_with_index(index_given,E0_ref=ref_energy)* 1.60218/sum_f_by_L_all_sources
+	luminosity_per_source = diffuse_flux_given_at_ref_energy* energy_integral_with_index(index_given,E0_ref=ref_energy,emin=energy_range_low,emax=energy_range_high)* 1.60218/sum_f_by_L_all_sources
 
 
 	indi_flux_vals = luminosity_per_source*all_lum_d # Val in TeVcm-2s-1
 
-	indi_flux_vals_norm = indi_flux_vals/(energy_integral_with_index(index_given,E0_ref=ref_energy)* 1.60218) # Norm in TeV-1cm-2s-1
+	indi_flux_vals_norm = indi_flux_vals/(energy_integral_with_index(index_given,E0_ref=ref_energy,emin=energy_range_low,emax=energy_range_high)* 1.60218) # Norm in TeV-1cm-2s-1
 
 	return np.asarray(indi_flux_vals_norm),np.asarray(luminosity_per_source)
 
@@ -231,7 +243,9 @@ def log_normal(astopy_coodinates,
 				index_given,
 				ref_energy,
 				median_luminosity,
-				stdev_sigma_L):
+				stdev_sigma_L,
+				energy_range_low,
+				energy_range_high):
 	"""
 	From  https://arxiv.org/pdf/1705.00806.pdf
 	and https://arxiv.org/pdf/2112.09699.pdf
@@ -266,11 +280,11 @@ def log_normal(astopy_coodinates,
 		else:
 				sum_f_by_L_all_sources = all_lum_d.sum()
 
-		median_luminosity = diffuse_flux_given_at_ref_energy* energy_integral_with_index(index_given,E0_ref=ref_energy)* 1.60218/sum_f_by_L_all_sources
+		median_luminosity = diffuse_flux_given_at_ref_energy* energy_integral_with_index(index_given,E0_ref=ref_energy,emin=energy_range_low,emax=energy_range_high)* 1.60218/sum_f_by_L_all_sources
 		print("Derived luminosity of: ",median_luminosity)
 	
 
-	L_med = np.log10(median_luminosity*0.624151)      # log mead luminosity
+	L_med = np.log10(median_luminosity)      # log mead luminosity
 	sigma_L = stdev_sigma_L        # sigma is given in ln
 	
 
@@ -308,7 +322,7 @@ def log_normal(astopy_coodinates,
 
 	# Now we have the log luminosities, we need to convert them to fluxes.
 
-	indi_flux_vals = np.asarray(selected_lum)*np.asarray(all_lum_d)/ (energy_integral_with_index(index_given,E0_ref=ref_energy)* 1.60218) # Val in TeV-1cm-2s-1 
+	indi_flux_vals = np.asarray(selected_lum)*np.asarray(all_lum_d)/ (energy_integral_with_index(index_given,E0_ref=ref_energy,emin=energy_range_low,emax=energy_range_high)* 1.60218) # Val in TeV-1cm-2s-1 
 
 	
 	return np.asarray(indi_flux_vals),np.asarray(selected_lum)

@@ -190,7 +190,12 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 							median_luminosity_nu        = None,
 							median_luminosity_gamma     = None,
 							stdev_sigma_L_nu            = 1.,
-							stdev_sigma_L_gamma         = 1.): #TeV
+							stdev_sigma_L_gamma         = 1.,
+							gamma_energy_range_low		= 1e0,
+							gamma_energy_range_high		= 5e1,
+							nu_energy_range_low			= 1e1,
+							nu_energy_range_high		= 1e4
+							): #TeV
 
 	
 	index_nu_given=index_nu_given*(-1.0)
@@ -225,7 +230,9 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																index_nu_given,
 																nu_ref_energy,
 																median_luminosity_nu,
-																stdev_sigma_L_nu)
+																stdev_sigma_L_nu,
+																nu_energy_range_low,
+																nu_energy_range_high)
 		
 
 		
@@ -260,7 +267,9 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																index_gamma_given,
 																gamma_ray_ref_energy,
 																median_luminosity_gamma,
-																stdev_sigma_L_gamma)
+																stdev_sigma_L_gamma,
+																gamma_energy_range_low,
+																gamma_energy_range_high)
 
 
 		
@@ -292,7 +301,9 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																index_gamma_given,
 																gamma_ray_ref_energy,
 																median_luminosity_gamma,
-																stdev_sigma_L_gamma)
+																stdev_sigma_L_gamma,
+																gamma_energy_range_low,
+																gamma_energy_range_high)
 
 
 		
@@ -305,7 +316,9 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																index_nu_given,
 																nu_ref_energy,
 																median_luminosity_nu,
-																stdev_sigma_L_nu)
+																stdev_sigma_L_nu,
+																nu_energy_range_low,
+																nu_energy_range_high)
 
 	gamma_fluxes = np.float32(np.log10(np.asarray(gamma_fluxes)))
 	gamma_luminosity = np.float32(np.log10(np.asarray(gamma_luminosity)))
