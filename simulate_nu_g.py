@@ -308,8 +308,6 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 
 		
 		# NEXT COMPUTE NU FLUXES
-		index_nu_given=index_nu_given*(-1.0)
-
 		
 		nu_fluxes,nu_luminosity = get_flux_distribution(nu_method_used  ,astropy_coords_in_galactic,
 																diffuse_nu_flux_given, #TeV-1cm-2s-1

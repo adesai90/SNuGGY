@@ -133,12 +133,13 @@ def energy_integral_with_index(index_given,
 						   E0_ref=1e2): 
 	""" Derived from FIRESONG!
 	integal_{emin}^{emax} E*(E/E0)^(-index) dE"""
-	index = -1 * index_given
-	if index != 2.0:
-		integral = (emax**(2-index)-emin**(2-index)) / (2-index)
+	index_val = abs(index_given) # index_given is negative so index is positive
+
+	if index_val != 2.0:
+		integral = (emax**(2-index_val)-emin**(2-index_val)) / (2-index_val)
 	else:
 		integral = np.log(emax) - np.log(emin)
-	return E0_ref**index *integral
+	return E0_ref**index_val *integral # E0 is in denominator so its 1/E^(-index_val) 
 
 
 def standard_candle(astopy_coodinates,
@@ -262,6 +263,14 @@ def log_normal(astopy_coodinates,
 	"""
 
 	#Find Distance Along line of sight
+
+	print("Input Values are: Index - %.2e \n E0 - %.2e \n median_luminosity %s \n stdev_sigma_L %.2f Emin,Emax-%.2f,%.2f"%(index_given,
+				ref_energy,
+				median_luminosity,
+				stdev_sigma_L,
+				energy_range_low,
+				energy_range_high))
+
 	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
 	all_lum_d = 1/(4*np.pi*(distance_array**2))
 
