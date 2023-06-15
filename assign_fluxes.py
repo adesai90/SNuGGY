@@ -224,8 +224,6 @@ def standard_candle_forced(astopy_coodinates,
 
 
 
-### BELOW: TO BE UPDATED ##########
-
 
 def pdf_fuction_for_ln(L,
 						L_med,
@@ -303,15 +301,6 @@ def log_normal(astopy_coodinates,
 	pdf_lognorm = pdf_fuction_for_ln(log_bins,L_med,sigma_L)
 
 	pdf_lognorm = pdf_lognorm/np.sum(pdf_lognorm)
-
-	#x_arr_pdf_ln = log_bins
-	#fig, ax = plt.subplots(1,1,figsize=(18,9),dpi=100)
-	#ax.plot(x_arr_pdf_ln,pdf_lognorm)
-	#ax.set_xlabel('Luminosity TeV/cm2')
-	#ax.set_ylabel('PDF')
-	#ax.set_xscale('log')
-	#ax.set_yscale('log')
-	#plt.show()
 
 
 	
