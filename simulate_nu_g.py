@@ -16,20 +16,37 @@ from assign_fluxes import *
 from plotter import *
 
 def Write2File(msg,logfile):
+	"""
+    Writes input string to a text file.
 
-    if logfile!="":
-        log = open(logfile, "a")
-        log.write(msg+"\n")
-    log.close
+    Parameters:
+        msg (str): The input string to be written to the log file.
+        logfile (str): The path to the text file.
 
-    return
+	"""
+	if logfile!="":
+		log = open(logfile, "a")
+		log.write(msg+"\n")
+		log.close
+	return
 
 def convert_to_galactic(r_conv,z_conv,theta_conv):
 	"""
-	r is radial distance
-	z is vertical distance
-	theta is azimuth angle
-	"""
+    Converts coordinates from cylindrical representation to galactic coordinates.
+
+    Parameters:
+        r_conv (float): Radial distance.
+        z_conv (float): Vertical distance.
+        theta_conv (float): Azimuth angle.
+
+    Returns:
+        list: A list containing [galactic_astropy_coordinates,[l,b,d]] ; where [l,b,d] is an array
+
+    Notes:
+        - Requires the `astropy.coordinates` package.
+        - The input angles should be in radians and distances in kpc
+
+    """
 	c = coord.CylindricalRepresentation(rho=r_conv * u.kpc,phi=theta_conv * u.radian,z=z_conv * u.kpc)
 	c2= c.represent_as(CartesianRepresentation)
 
@@ -67,6 +84,39 @@ def	simulate_positions(output_file= None,
 			#number of bins
 			bins                  = 1000):
 	
+	"""
+    Simulates sources in galactic coordinates.
+
+    Parameters:
+        output_file (str, optional): The path where the output file will be saved. If not provided, the output will not be saved.
+        distribution_model (str, optional): The distribution model to use for generating positions. Default is "exponential".
+        number_sources_used (int, optional): The number of sources to simulate. Default is 1000.
+        seed (int, optional): The seed for the random number generator. If not provided, a random seed will be used.
+        plot_dir (str, optional): The directory to save the 3D plot of galactic coordinates. If not given; plot will not be saved.
+        plot_aitoff_dir_icrs (str, optional): The directory to save the Aitoff projection plot in ICRS coordinates. If not given; plot will not be saved.
+        plot_aitoff_dir_gal (str, optional): The directory to save the Aitoff projection plot in galactic coordinates. If not given; plot will not be saved.
+        filename (str, optional): The name of the output file. If output_file is given but filename is not provided, a default name will be used.
+        make_pdf_plot_location (str, optional): The location to save the PDF plots. Default is None.
+        z_max (float, optional): The maximum vertical distance (z) in kpc. Default is 300.0.
+        z_min (float, optional): The minimum vertical distance (z) in kpc. Default is 1e-06.
+        r_max (float, optional): The maximum radial distance (r) in kpc. Default is 1000000.0.
+        r_min (float, optional): The minimum radial distance (r) in kpc. Default is 0.001.
+        z_0 (float, optional): The vertical scale parameter for the exponential distribution. Default is 0.6.
+        r_0 (float, optional): The radial scale parameter for the exponential distribution. Default is 3.0.
+        alpha (float, optional): The alpha parameter for the modified exponential distribution. Default is 2.
+        beta (float, optional): The beta parameter for the modified exponential distribution. Default is 3.53.
+        h (float, optional): The h parameter for the modified exponential distribution. Default is 0.181.
+        bins (int, optional): The number of bins used for sampling. Default is 1000.
+
+    Returns:
+        list: A list containing [array of coordinates in Galactocentric, array of coordinates in galactic coordinates, astropy galactic coordinates].
+
+    Notes:
+        - Requires the `astropy.coordinates` package.
+        - The output is not saved if both `output_file` and `filename` are not provided.
+        - The PDF plots are not created if `make_pdf_plot_location` is not provided.
+
+    """
 
 	rng = np.random.RandomState(seed)
 
@@ -77,7 +127,8 @@ def	simulate_positions(output_file= None,
 		make_pdf_plot_location=None
 	
 	if make_pdf_plot_location!=None:
-		print("Something went wrong")
+		make_pdf_plot_location=None
+		print("Warning: Manually foced make_pdf_plot_location=None")
 	
 	# CONVERTING 2D PDF TO 1D TO GET SAMPLES
 
@@ -146,7 +197,7 @@ def	simulate_positions(output_file= None,
 		output_file_full_path = None
 
 	if output_file_full_path!=None:
-		print("Saving output toe file: ",output_file)
+		print("Saving output to file: ",output_file)
 		print("\n Please Note that the output will be saved as:")
 		print("Galactocentric Coords (r,phi,z) then Galactic Coords (l deg,b deg,d kpc)")
 
@@ -187,17 +238,62 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 							simulate_gamma_ray_frm_nu	= False,
 							simulate_nu_frm_gamma       = False,
 							pp_or_pgamma				= "pp",
-							median_luminosity_nu        = None,
-							median_luminosity_gamma     = None,
+							mean_luminosity_nu        = None,
+							mean_luminosity_gamma     = None,
 							stdev_sigma_L_nu            = 1.,
 							stdev_sigma_L_gamma         = 1.,
 							gamma_energy_range_low		= 1e0,
 							gamma_energy_range_high		= 5e1,
 							nu_energy_range_low			= 1e1,
 							nu_energy_range_high		= 1e4
-							): #TeV
+							): 
 
-	
+	"""
+    Computes fluxes of neutrinos and gamma rays based on source positions.
+
+    Parameters:
+        galcentric_coords_r_phi_z (tuple, required): Source positions in galactocentric coordinates as an array [r, z , phi]. Code will not run if not given.
+        nu_method_used (str, optional): The method used for computing neutrino flux. Default is "StandardCandle".
+        gamma_ray_method_used (str, optional): The method used for computing gamma ray flux. Default is "StandardCandle".
+        diffuse_nu_flux_given (float, optional): The diffuse neutrino flux in TeV^-1 cm^-2 s^-1. Default is 1e-15.
+        diffuse_gamma_flux_given (float, optional): The diffuse gamma ray flux in TeV^-1 cm^-2 s^-1. Default is 1e-15.
+        print_output (bool, optional): Whether to print the output or not. Default is False.
+        full_path (str, optional): The full path where the output array will be saved as an npz file. Default is None.
+        index_nu_given (float, optional): The index of the power-law spectrum for neutrinos. Default is 2.7.
+        index_gamma_given (float, optional): The index of the power-law spectrum for gamma rays. Default is 2.7.
+        nu_ref_energy (float, optional): The reference energy for neutrinos in TeV. Default is 100.0.
+        gamma_ray_ref_energy (float, optional): The reference energy for gamma rays in TeV. Default is 50.0.
+        simulate_gamma_ray_frm_nu (bool, optional): Whether to simulate gamma ray flux from neutrino flux. Default is False.
+        simulate_nu_frm_gamma (bool, optional): Whether to simulate neutrino flux from gamma ray flux. Default is False.
+        pp_or_pgamma (str, optional): The type of interaction used for computing fluxes. Default is "pp".
+        mean_luminosity_nu (float, optional): The mean luminosity for neutrinos. Default is None.
+        mean_luminosity_gamma (float, optional): The mean luminosity for gamma rays. Default is None.
+        stdev_sigma_L_nu (float, optional): The standard deviation of the luminosity distribution for neutrinos. Default is 1.0.
+        stdev_sigma_L_gamma (float, optional): The standard deviation of the luminosity distribution for gamma rays. Default is 1.0.
+        gamma_energy_range_low (float, optional): The lower energy range for gamma rays in TeV. Default is 1e0.
+        gamma_energy_range_high (float, optional): The higher energy range for gamma rays in TeV. Default is 5e1.
+        nu_energy_range_low (float, optional): The lower energy range for neutrinos in TeV. Default is 1e1.
+        nu_energy_range_high (float, optional): The higher energy range for neutrinos in TeV. Default is 1e4.
+
+    Returns:
+        list: The output array is in the form:
+            - 0 -> Astropy coordinates
+            - 1 -> Logarithm of neutrino fluxes
+            - 2 -> Logarithm of neutrino luminosities
+            - 3 -> Logarithm of gamma ray fluxes
+            - 4 -> Logarithm of gamma ray luminosities
+
+    Raises:
+        ValueError: If both `simulate_gamma_ray_frm_nu` and `simulate_nu_frm_gamma` are set to True.
+
+    Notes:
+        - This function computes neutrino flux and/or gamma ray flux based on source positions.
+        - If neutrino and gamma ray fluxes are required to be simulated seperately, set `simulate_gamma_ray_frm_nu` and `simulate_nu_frm_gamma` to False
+        - If `print_output` is True, the output array will be saved as an npz file at `full_path`.
+
+    
+    """
+
 	index_nu_given=index_nu_given*(-1.0)
 	index_gamma_given=index_gamma_given*(-1.0)
 	
@@ -213,7 +309,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 
 
 		if galcentric_coords_r_phi_z==None:
-			print("Error: Give Source Positions in r,z,phi Coordinates for ARRAY FORMAT")
+			print("Error: Give Source Positions in r,z,phi Coordinates for ARRAY FORMAT as [r,z,phi]")
 			exit()
 
 		astropy_coords_in_galactic = convert_to_galactic(galcentric_coords_r_phi_z[0],galcentric_coords_r_phi_z[1],galcentric_coords_r_phi_z[2])[0]
@@ -229,7 +325,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																diffuse_nu_flux_given, #TeV-1cm-2s-1
 																index_nu_given,
 																nu_ref_energy,
-																median_luminosity_nu,
+																mean_luminosity_nu,
 																stdev_sigma_L_nu,
 																nu_energy_range_low,
 																nu_energy_range_high)
@@ -266,7 +362,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																diffuse_gamma_flux_given, #TeV-1cm-2s-1
 																index_gamma_given,
 																gamma_ray_ref_energy,
-																median_luminosity_gamma,
+																mean_luminosity_gamma,
 																stdev_sigma_L_gamma,
 																gamma_energy_range_low,
 																gamma_energy_range_high)
@@ -300,7 +396,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																diffuse_gamma_flux_given, #TeV-1cm-2s-1
 																index_gamma_given,
 																gamma_ray_ref_energy,
-																median_luminosity_gamma,
+																mean_luminosity_gamma,
 																stdev_sigma_L_gamma,
 																gamma_energy_range_low,
 																gamma_energy_range_high)
@@ -313,7 +409,7 @@ def	Get_flux_from_positions(galcentric_coords_r_phi_z   = None,
 																diffuse_nu_flux_given, #TeV-1cm-2s-1
 																index_nu_given,
 																nu_ref_energy,
-																median_luminosity_nu,
+																mean_luminosity_nu,
 																stdev_sigma_L_nu,
 																nu_energy_range_low,
 																nu_energy_range_high)

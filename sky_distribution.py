@@ -10,24 +10,20 @@ matplotlib.rc('font', **font)
 
 def get_model(model_name,distribution_parameters_list,r,z,make_pdf_plot_location):
     models = {"exponential": ExponentialSpatialDist,
-    		  "modified_exponential": ModifiedExponentialDist} #change name to Lorimer_case_dist
-    #          "radial_GDP": RadialGaussianDensityProfile,
-    #          "SNR": SuperNovaRemenant,
-    #          "PWN": PulsarWindNebula,
-    #          }
-
-
-    # NOTE:
-    # distribution_parameters_list = [r_0,    -------0 index
-    #								  z_0,    -------1
-    #								  alpha,  -------2
-    #								  beta,   -------3
-    #								  h,      -------4
-    #								  r_min,  -------5
-    #								  r_max,  -------6
-    #								  z_min,  -------7
-    #								  z_max]  -------8
-	#
+    		  "modified_exponential": ModifiedExponentialDist} 
+    """
+	NOTE:
+     distribution_parameters_list = [r_0,    -------0 index
+    								  z_0,    -------1
+    								  alpha,  -------2
+    								  beta,   -------3
+    								  h,      -------4
+    								  r_min,  -------5
+    								  r_max,  -------6
+    								  z_min,  -------7
+    								  z_max]  -------8
+	
+	"""
 
     if not model_name in models.keys():
     	raise NotImplementedError(model_name+ " Model not found ")
@@ -49,7 +45,7 @@ def get_model(model_name,distribution_parameters_list,r,z,make_pdf_plot_location
     				distribution_parameters_list[7],
     				distribution_parameters_list[8]]
     else:
-    	print("Wrong Model name; Should not get this message if notIMPLEMENTED ERROR code is working, Please check code")
+    	print("Wrong Model name; Check Input and set to either exponential or modified_exponential")
     	exit()
 
     if make_pdf_plot_location!=None:
@@ -110,8 +106,6 @@ def ExponentialSpatialDist(param_used,r,z): # param_used = r_0,z_0
 	if z_max_int>=1000:
 		z_max_int=1000.0
 	
-	#maximum_pt = r_0 # Found Using derivatve
-	#norm_r     = 1/(maximum_pt*np.exp(-1.*(maximum_pt/r_0)))
 	
 	norm_r = 1/integrate.quad(lambda r_temp: r_temp * np.exp(-1.*r_temp/r_0), r_min_int, r_max_int)[0]
 	exp_dist = norm_r * r * np.exp(-1.*r/r_0)
@@ -174,9 +168,7 @@ def ModifiedExponentialDist(param_used,r,z): # param_used = alpha,beta,h
 
 	r_solar=8.5
 	z_solar=0.015
-	#maximum_pt = (alpha+1)*r_solar/beta # Found Using derivatve
-	#norm_r     = 1/(maximum_pt*((maximum_pt/r_solar)**alpha)*np.exp(-1.*beta*((maximum_pt-r_solar)/r_solar)))
-
+	
 	norm_r = 1/integrate.quad(lambda r_temp: (r_temp*(r_temp/r_solar)**alpha)*np.exp(-1.*beta*((r_temp-r_solar)/r_solar)), r_min_int, r_max_int)[0]
 	exp_dist = norm_r * (r*(r/r_solar)**alpha)*np.exp(-1.*beta*((r-r_solar)/r_solar))
 	

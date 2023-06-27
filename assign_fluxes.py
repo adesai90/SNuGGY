@@ -89,7 +89,7 @@ def get_flux_distribution(method_name,astopy_coodinates,
 							diffuse_flux_given,
 							index_given,
 							ref_energy,
-							median_luminosity,
+							mean_luminosity,
 							stdev_sigma_L,
 							energy_range_low,
 							energy_range_high):
@@ -121,7 +121,7 @@ def get_flux_distribution(method_name,astopy_coodinates,
     								diffuse_flux_given,
 									index_given,
 									ref_energy,
-									median_luminosity,
+									mean_luminosity,
 									stdev_sigma_L,
 									energy_range_low,
 									energy_range_high)
@@ -131,8 +131,9 @@ def energy_integral_with_index(index_given,
 						   emin=1e1, #TeV
 						   emax=1e4, #TeV
 						   E0_ref=1e2): 
-	""" Derived from FIRESONG!
-	integal_{emin}^{emax} E*(E/E0)^(-index) dE"""
+	""" 
+	integal_{emin}^{emax} E*(E/E0)^(-index) dE
+	"""
 	index_val = abs(index_given) # index_given is negative so index is positive
 
 	if index_val != 2.0:
@@ -155,7 +156,7 @@ def standard_candle(astopy_coodinates,
 		The total flux from these sources may or may not be exactly equal to the diffuse flux.
 
 		This is an update of the standard_candle_forced definition.
-		N
+		
 	""" 
 	E0 = ref_energy
 
@@ -226,22 +227,22 @@ def standard_candle_forced(astopy_coodinates,
 
 
 def pdf_fuction_for_ln(L,
-						L_med,
+						L_mean,
 						sigma_L):
 	#Taking ln() based on 2.1 of https://arxiv.org/pdf/1705.00806.pdf
 	#Format for reference when luminosities are in non-log units (e.g 1e25): 
-	#(np.log10(np.exp(1))/(sigma_L*L*np.sqrt(2*np.pi)))*np.exp(-((np.log10(L)-np.log10(L_med))**2)/(2*(sigma_L**2)))
-	if L_med-100>0:
+	#(np.log10(np.exp(1))/(sigma_L*L*np.sqrt(2*np.pi)))*np.exp(-((np.log10(L)-np.log10(L_mean))**2)/(2*(sigma_L**2)))
+	if L_mean-100>0:
 		print("Make sure log-luminosities are given")
 		return
 	else:
-		return (np.log10(np.exp(1))/(sigma_L*(10**L)*np.sqrt(2*np.pi)))*np.exp(-((L-L_med)**2)/(2*(sigma_L**2)))
+		return (np.log10(np.exp(1))/(sigma_L*(10**L)*np.sqrt(2*np.pi)))*np.exp(-((L-L_mean)**2)/(2*(sigma_L**2)))
 
 def log_normal(astopy_coodinates,
 				diffuse_flux_given,
 				index_given,
 				ref_energy,
-				median_luminosity,
+				mean_luminosity,
 				stdev_sigma_L,
 				energy_range_low,
 				energy_range_high):
@@ -249,12 +250,12 @@ def log_normal(astopy_coodinates,
 	From  https://arxiv.org/pdf/1705.00806.pdf
 	and https://arxiv.org/pdf/2112.09699.pdf
 	Probability Density is given by:
-	p(L) = (log10(e)/(sigma_L L sqrt(2pi))) exp(-(log10(L)-log10(Lmed))^2/(2 sigma_L^2))
+	p(L) = (log10(e)/(sigma_L L sqrt(2pi))) exp(-(log10(L)-log10(Lmean))^2/(2 sigma_L^2))
 	
 	
-	L_med = Median luminosity
-	If Median luminosity is not given it is derived using the diffuse flux.  
-	This is done by first finding the SC luminosity and then using that value as the median to get the log normal distribution.
+	L_mean = mean luminosity
+	If mean luminosity is not given it is derived using the diffuse flux.  
+	This is done by first finding the SC luminosity and then using that value as the mean to get the log normal distribution.
 
 	Be Careful as the energy range of interst here is really high probably for eg. 100 TeV for neutrinos and 50 TeV for gamma-rays
 	So luminosity values might be lower at those reference energies. Change the reference energy based on luminosity value
@@ -262,9 +263,9 @@ def log_normal(astopy_coodinates,
 
 	#Find Distance Along line of sight
 
-	print("Input Values are: Index - %.2e \n E0 - %.2e \n median_luminosity %s \n stdev_sigma_L %.2f Emin,Emax-%.2f,%.2f"%(index_given,
+	print("Input Values are: Index - %.2e \n E0 - %.2e \n mean_luminosity %s \n stdev_sigma_L %.2f Emin,Emax-%.2f,%.2f"%(index_given,
 				ref_energy,
-				median_luminosity,
+				mean_luminosity,
 				stdev_sigma_L,
 				energy_range_low,
 				energy_range_high))
@@ -272,7 +273,7 @@ def log_normal(astopy_coodinates,
 	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
 	all_lum_d = 1/(4*np.pi*(distance_array**2))
 
-	if median_luminosity==None:
+	if mean_luminosity==None:
 		print("Getting SC luminosity from diffuse flux")
 		
 		#Diff flux Should be the same as we give E0 as reference enrgy and diffuse flux at that energy as input
@@ -287,18 +288,18 @@ def log_normal(astopy_coodinates,
 		else:
 				sum_f_by_L_all_sources = all_lum_d.sum()
 
-		median_luminosity = diffuse_flux_given_at_ref_energy* energy_integral_with_index(index_given,E0_ref=ref_energy,emin=energy_range_low,emax=energy_range_high)* 1.60218/sum_f_by_L_all_sources
-		print("Derived luminosity of: ",median_luminosity)
+		mean_luminosity = diffuse_flux_given_at_ref_energy* energy_integral_with_index(index_given,E0_ref=ref_energy,emin=energy_range_low,emax=energy_range_high)* 1.60218/sum_f_by_L_all_sources
+		print("Derived luminosity of: ",mean_luminosity)
 	
 
-	L_med = np.log10(median_luminosity)      # log mead luminosity
+	L_mean = np.log10(mean_luminosity)      # log mead luminosity
 	sigma_L = stdev_sigma_L        # sigma is given in ln
 	
 
 	
-	log_bins = np.arange(0,L_med+30,(L_med+30)/1000) #Simulating 1000 points
+	log_bins = np.arange(0,L_mean+30,(L_mean+30)/1000) #Simulating 1000 points
 
-	pdf_lognorm = pdf_fuction_for_ln(log_bins,L_med,sigma_L)
+	pdf_lognorm = pdf_fuction_for_ln(log_bins,L_mean,sigma_L)
 
 	pdf_lognorm = pdf_lognorm/np.sum(pdf_lognorm)
 
