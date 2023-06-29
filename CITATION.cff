@@ -1,4 +1,4 @@
-cff-version: 1.1.0
+cff-version: 0.0.0
 message: "If you use this software, please cite it as below."
 authors:
   - family-names: Desai
@@ -10,7 +10,10 @@ authors:
   - family-names: Anandagoda
     given-names: Samalka
     orcid: https://orcid.org/0000-0002-5490-2689
-title: abhishekdesai90/SNuGGY: Original Version
+title: abhishekdesai90/SNuGGY: v0.0.0
 version: 0.0.0
+doi: 10.5281/zenodo.8092198
 date-released: 2023-06-28
-            
+url: "https://github.com/abhishekdesai90/SNuGGY/tree/v0.0.0"
+
+
