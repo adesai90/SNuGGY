@@ -1,0 +1,19 @@
+cff-version: 0.0.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Desai
+    given-names: Abhishek
+    orcid: https://orcid.org/0000-0001-7405-9994
+  - family-names: Vandenbroucke
+    given-names: Justin
+    orcid: https://orcid.org/0000-0002-9867-6548
+  - family-names: Anandagoda
+    given-names: Samalka
+    orcid: https://orcid.org/0000-0002-5490-2689
+title: "SNuGGY: v0.0.0"
+version: 0.0.0
+doi: 10.5281/zenodo.8092198
+date-released: 2023-06-28
+url: "https://github.com/abhishekdesai90/SNuGGY/tree/v0.0.0"
+
+
