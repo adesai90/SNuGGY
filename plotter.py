@@ -16,7 +16,7 @@ def make_3d_plot(astropy_coords_in_galactic,plot_dir):
 	ax = fig.add_subplot(111, projection='3d')
 	ax.scatter(astropy_coords_in_galactic.transform_to(coord.Galactocentric).x,
 				astropy_coords_in_galactic.transform_to(coord.Galactocentric).y,
-				astropy_coords_in_galactic.transform_to(coord.Galactocentric).z) # plot the point (2,3,4) on the figure
+				astropy_coords_in_galactic.transform_to(coord.Galactocentric).z) 
 	ax.set_title("Simulated Sources in Galactocentric Coordinates")
 	ax.set_xlabel("\n x (kpc)")
 	ax.set_ylabel("\n y (kpc)")
