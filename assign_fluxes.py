@@ -31,7 +31,7 @@ def get_gamma_from_nu(astropy_coords_in_galactic,
 	1/3sum(Ev^2 Qv(Ev)) ~ (Kpi/4) * [Eg^2 Qg(Eg)]Eg=2Ev
 	"""
 	E_nu = nu_ref_energy
-	E_gamma = nu_ref_energy/2.
+	E_gamma = nu_ref_energy*2.
 	if pp_or_pgamma=="pp":
 		Kpi = 2.
 	elif pp_or_pgamma=="pgamma":
@@ -60,7 +60,7 @@ def get_nu_from_gamma(astropy_coords_in_galactic,
 	given as:
 	1/3sum(Ev^2 Qv(Ev)) ~ (Kpi/4) * [Eg^2 Qg(Eg)]Eg=2Ev
 	"""
-	E_nu = gamma_ray_ref_energy*2.
+	E_nu = gamma_ray_ref_energy/2.
 	E_gamma = gamma_ray_ref_energy
 	if pp_or_pgamma=="pp":
 		Kpi = 2.
@@ -207,8 +207,6 @@ def standard_candle_forced(astopy_coodinates,
 		sum_f_by_L_all_sources += all_lum_d
 	else:
 		sum_f_by_L_all_sources = all_lum_d.sum()
-		#for los_distance in distance_array:
-		#	sum_f_by_L_all_sources += 1/(4*np.pi*(los_distance**2))
 	luminosity_per_source = diffuse_flux_given_at_ref_energy* energy_integral_with_index(index_given,E0_ref=ref_energy,emin=energy_range_low,emax=energy_range_high)* 1.60218/sum_f_by_L_all_sources
 
 
@@ -229,14 +227,17 @@ def standard_candle_forced(astopy_coodinates,
 def pdf_fuction_for_ln(L,
 						L_mean,
 						sigma_L):
-	#Taking ln() based on 2.1 of https://arxiv.org/pdf/1705.00806.pdf
-	#Format for reference when luminosities are in non-log units (e.g 1e25): 
-	#(np.log10(np.exp(1))/(sigma_L*L*np.sqrt(2*np.pi)))*np.exp(-((np.log10(L)-np.log10(L_mean))**2)/(2*(sigma_L**2)))
+	# If Taking ln() based on 2.1 of https://arxiv.org/pdf/1705.00806.pdf you need to give MEDIAN luminosity
+	# We have mean so taking log() similar to 4.2 of https://arxiv.org/pdf/2112.09699.pdf
+	# Format for reference when luminosities are in non-log units (e.g 1e25): 
+	# (np.log10(np.exp(1))/(sigma_L*L*np.sqrt(2*np.pi)))*np.exp(-((np.log10(L)-np.log10(L_mean))**2)/(2*(sigma_L**2)))
 	if L_mean-100>0:
 		print("Make sure log-luminosities are given")
 		return
 	else:
-		return (np.log10(np.exp(1))/(sigma_L*(10**L)*np.sqrt(2*np.pi)))*np.exp(-((L-L_mean)**2)/(2*(sigma_L**2)))
+		#return (np.log10(np.exp(1))/(sigma_L*(10**L)*np.sqrt(2*np.pi)))*np.exp(-((L-L_mean)**2)/(2*(sigma_L**2)))
+		return ((1/(sigma_L*(10**L)*np.sqrt(2*np.pi)))*np.exp(-((np.log(10**L)-np.log(10**L_mean))**2)/(2*(sigma_L**2))))
+
 
 def log_normal(astopy_coodinates,
 				diffuse_flux_given,
@@ -297,7 +298,7 @@ def log_normal(astopy_coodinates,
 	
 
 	
-	log_bins = np.arange(0,L_mean+30,(L_mean+30)/1000) #Simulating 1000 points
+	log_bins = np.arange(L_mean-20,L_mean+20,(2*L_mean)/1000) #Simulating 1000 points
 
 	pdf_lognorm = pdf_fuction_for_ln(log_bins,L_mean,sigma_L)
 
@@ -317,7 +318,12 @@ def log_normal(astopy_coodinates,
 
 	rng = np.random.RandomState()
 	rng_arr = rng.uniform(0,	1,size=nsource)
-	selected_lum =10**invCDF_log_lum(rng_arr) # Here the log luminosities will be selected so they are converted back to luminosities
+	sampled_luminosities = 10**invCDF_log_lum(rng_arr) 
+	### sigma_L can cause a shift, so make sure mean is reproduced.
+	# We used median above but given value is mean so correct for that
+	difference_from_mean =np.mean(sampled_luminosities)/10**L_mean
+	sampled_luminosities_corr = sampled_luminosities/difference_from_mean
+	selected_lum =sampled_luminosities_corr # Here the log luminosities will be selected so they are converted back to luminosities
 
 	# Now we have the log luminosities, we need to convert them to fluxes.
 
