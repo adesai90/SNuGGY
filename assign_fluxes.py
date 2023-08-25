@@ -235,9 +235,11 @@ def pdf_fuction_for_ln(L,
 		print("Make sure log-luminosities are given")
 		return
 	else:
+		# Equation using Log10
 		#return (np.log10(np.exp(1))/(sigma_L*(10**L)*np.sqrt(2*np.pi)))*np.exp(-((L-L_mean)**2)/(2*(sigma_L**2)))
+	
+		# Equation using ln (preferred)
 		return ((1/(sigma_L*(10**L)*np.sqrt(2*np.pi)))*np.exp(-((np.log(10**L)-np.log(10**L_mean))**2)/(2*(sigma_L**2))))
-
 
 def log_normal(astopy_coodinates,
 				diffuse_flux_given,
