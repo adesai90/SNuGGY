@@ -53,7 +53,7 @@ def convert_to_galactic(r_conv,z_conv,theta_conv):
 	c3=coord.Galactocentric(x=c2.x,y=c2.y,z=c2.z)
 	del c,c2
 
-	transformed_coord = c3.transform_to(coord.Galactic)
+	transformed_coord = c3.transform_to(coord.Galactic())
 
 	del c3
 

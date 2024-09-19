@@ -14,9 +14,9 @@ matplotlib.rc('font', **font)
 def make_3d_plot(astropy_coords_in_galactic,plot_dir):
 	fig = plt.figure(figsize=(15,15),dpi=200)
 	ax = fig.add_subplot(111, projection='3d')
-	ax.scatter(astropy_coords_in_galactic.transform_to(coord.Galactocentric).x,
-				astropy_coords_in_galactic.transform_to(coord.Galactocentric).y,
-				astropy_coords_in_galactic.transform_to(coord.Galactocentric).z) 
+	ax.scatter(astropy_coords_in_galactic.transform_to(coord.Galactocentric()).x,
+				astropy_coords_in_galactic.transform_to(coord.Galactocentric()).y,
+				astropy_coords_in_galactic.transform_to(coord.Galactocentric()).z) 
 	ax.set_title("Simulated Sources in Galactocentric Coordinates")
 	ax.set_xlabel("\n x (kpc)")
 	ax.set_ylabel("\n y (kpc)")
@@ -40,8 +40,8 @@ def make_gal_aitoff_plot(astropy_coords_in_galactic,plot_aitoff_dir_gal):
 def make_icrs_aitoff_plot(astropy_coords_in_galactic,plot_aitoff_dir_icrs):
 	fig = plt.figure(figsize=(15,9),dpi=250)
 	fig.add_subplot(111, projection='aitoff')
-	ra2 = astropy_coords_in_galactic.transform_to(coord.ICRS).ra.wrap_at(180 * u.deg).radian
-	dec2 = astropy_coords_in_galactic.transform_to(coord.ICRS).dec.radian
+	ra2 = astropy_coords_in_galactic.transform_to(coord.ICRS()).ra.wrap_at(180 * u.deg).radian
+	dec2 = astropy_coords_in_galactic.transform_to(coord.ICRS()).dec.radian
 	ra2, dec2 = zip(*sorted(zip(ra2,dec2)))
 	plt.plot(ra2,dec2,'.', label="Simulated Sources in ICRS Coordinates",alpha=0.5,zorder=0)
 	plt.legend(loc="lower right")

@@ -43,7 +43,7 @@ def get_gamma_from_nu(astropy_coords_in_galactic,
 	E2Qgamma = (1./3.) * E2Qv * (4./Kpi)
 	flux_at_Egamma = E2Qgamma/(E_gamma*E_gamma)
 	# Find Distances of simulated sources Along line of sight
-	distance_array = (astropy_coords_in_galactic.transform_to(coord.ICRS).distance.to(u.cm)).value
+	distance_array = (astropy_coords_in_galactic.transform_to(coord.ICRS()).distance.to(u.cm)).value
 	# Now convert this to get the luminosity per source
 	mean_distance = 2.469e+22 # 8 kpc in cm, close to peak in distributions 
 	luminosity_per_source = flux_at_Egamma * energy_integral_with_index(index_given,E0_ref=E_gamma) * (4*np.pi*(mean_distance**2)) * 1.60218 # TeV/s -> erg/s
@@ -73,7 +73,7 @@ def get_nu_from_gamma(astropy_coords_in_galactic,
 	E2Qv = (3./1.) * (Kpi/4.) * E2Qgamma 
 	flux_at_Enu = E2Qv/(E_nu * E_nu)
 	# Find Distances of simulated sources Along line of sight
-	distance_array = (astropy_coords_in_galactic.transform_to(coord.ICRS).distance.to(u.cm)).value
+	distance_array = (astropy_coords_in_galactic.transform_to(coord.ICRS()).distance.to(u.cm)).value
 	# Now convert this to get the luminosity per source
 	mean_distance = 2.469e+22 # 8 kpc in cm, close to peak in distributions 
 	luminosity_per_source = flux_at_Enu * energy_integral_with_index(index_given,E0_ref=E_gamma) * (4*np.pi*(mean_distance**2)) * 1.60218 # TeV/s -> erg/s
@@ -161,7 +161,7 @@ def standard_candle(astopy_coodinates,
 	E0 = ref_energy
 
 	# Find Distances of simulated sources Along line of sight
-	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
+	distance_array = (astopy_coodinates.transform_to(coord.ICRS()).distance.to(u.cm)).value
 	# Given the total flux, find individual flux contribution
 	indi_flux_contribution = diffuse_flux_given /len(distance_array) # in TeV-1cm-2s-1 
 
@@ -192,7 +192,7 @@ def standard_candle_forced(astopy_coodinates,
 
 	# Find Distance Along line of sight
 	print("Using Forced Standard Candle Approach")
-	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
+	distance_array = (astopy_coodinates.transform_to(coord.ICRS()).distance.to(u.cm)).value
 	all_lum_d = 1/(4*np.pi*(distance_array**2))
 	del distance_array
 	#Should be the same as we give E0 as reference enrgy and diffuse flux at that energy as input
@@ -273,7 +273,7 @@ def log_normal(astopy_coodinates,
 				energy_range_low,
 				energy_range_high))
 
-	distance_array = (astopy_coodinates.transform_to(coord.ICRS).distance.to(u.cm)).value
+	distance_array = (astopy_coodinates.transform_to(coord.ICRS()).distance.to(u.cm)).value
 	all_lum_d = 1/(4*np.pi*(distance_array**2))
 
 	if mean_luminosity==None:
