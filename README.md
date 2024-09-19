@@ -25,4 +25,4 @@ Please cite the journal article:
 when using this code.
 Thank you.
 
-For questions/comments please contact abhishek.desai.work@gmail.com
+For questions/comments please contact adesai.physics@gmail.com
